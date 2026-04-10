@@ -1,0 +1,11 @@
+* My First Voltage Divider (This is the title line!)
+V1 1 0 10V        * 10V source connected to Node 1 and Ground
+R1 1 2 5k         * Resistor 1 between Node 1 and 2
+R2 2 0 5k         * Resistor 2 between Node 2 and Ground
+
+.OP               * Tell SPICE to calculate DC voltages
+.control          * (For LTspice/Ngspice)
+run
+print v(2)        * We expect to see 5V here
+.endc
+.end

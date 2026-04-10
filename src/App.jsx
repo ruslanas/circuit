@@ -19,7 +19,9 @@ import {
   Save,
   ChevronDown,
   ChevronRight,
-  HelpCircle
+  HelpCircle,
+  Undo,
+  Redo
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
 
@@ -631,6 +633,10 @@ const App = () => {
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [showHelp, setShowHelp] = useState(false);
   const lastClickRef = useRef({ id: null, time: 0 });
+
+  const [past, setPast] = useState([]);
+  const [future, setFuture] = useState([]);
+  const dragSnapshotRef = useRef(null);
   
   // physics engine data
   const [tick, setTick] = useState(0);
@@ -675,6 +681,40 @@ const App = () => {
       localStorage.setItem('circuit_custom_components', JSON.stringify(customComponents));
     } catch (e) { console.warn("Failed to save state to localStorage", e); }
   }, [components, wires, pan, zoom, customComponents]);
+
+  // --- Undo / Redo ---
+  const pushStateToHistory = (comps, wrs) => {
+    setPast(prev => {
+       const newPast = [...prev, { components: comps, wires: wrs }];
+       if (newPast.length > 50) return newPast.slice(newPast.length - 50);
+       return newPast;
+    });
+    setFuture([]);
+  };
+
+  const undo = () => {
+    if (past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    setFuture(prev => [{ components, wires }, ...prev]);
+    setPast(newPast);
+    setComponents(previous.components);
+    setWires(previous.wires);
+    setSelectedIds([]);
+    setSelectedWireId(null);
+  };
+
+  const redo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    setPast(prev => [...prev, { components, wires }]);
+    setFuture(newFuture);
+    setComponents(next.components);
+    setWires(next.wires);
+    setSelectedIds([]);
+    setSelectedWireId(null);
+  };
 
   // --- PWA Setup ---
   useEffect(() => {
@@ -806,6 +846,8 @@ const App = () => {
     const type = COMPONENT_TYPES[typeKey] || customComponents[typeKey];
     if(!type) return;
     
+    pushStateToHistory(components, wires);
+
     const isCustom = !COMPONENT_TYPES[typeKey];
 
     if (isCustom) {
@@ -859,6 +901,8 @@ const App = () => {
       const svgY = (e.clientY - CTM.f) / CTM.d;
       const dropX = (svgX - pan.x) / zoom;
       const dropY = (svgY - pan.y) / zoom;
+
+      pushStateToHistory(components, wires);
 
       const isCustom = !COMPONENT_TYPES[typeKey];
 
@@ -965,6 +1009,7 @@ const App = () => {
     const comp = components.find(c => c.id === id);
     if (!comp) return;
 
+    dragSnapshotRef.current = { components, wires };
     setDraggedComp({
       id,
       startX: e.clientX,
@@ -994,6 +1039,7 @@ const App = () => {
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (activeTerminal) {
       if (activeTerminal.compId !== compId) {
+        pushStateToHistory(components, wires);
         const newWire = { id: crypto.randomUUID(), from: activeTerminal, to: { compId, termIdx }, props: { maxCurrent: 5 } };
         setWires([...wires, newWire]);
         setLoadedExampleTitle("");
@@ -1079,12 +1125,15 @@ const App = () => {
          } else {
              const comp = components.find(c => c.id === draggedComp.id);
              if (comp && comp.type === 'SWITCH') {
+               pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
                setComponents(prev => prev.map(c => 
                  c.id === comp.id ? { ...c, props: { ...c.props, isOpen: !c.props.isOpen } } : c
                ));
              }
          }
          lastClickRef.current = { id: draggedComp.id, time: now };
+      } else {
+         pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
       }
       if (e.target.releasePointerCapture) {
         try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
@@ -1095,12 +1144,14 @@ const App = () => {
 
   const deleteSelected = () => {
     if (selectedIds.length > 0) {
+      pushStateToHistory(components, wires);
       setComponents(prev => prev.filter(c => !selectedIds.includes(c.id)));
       setWires(prev => prev.filter(w => !selectedIds.includes(w.from.compId) && !selectedIds.includes(w.to.compId)));
       setSelectedIds([]);
       setIsPropDialogOpen(false);
       setLoadedExampleTitle("");
     } else if (selectedWireId) {
+      pushStateToHistory(components, wires);
       setWires(prev => prev.filter(w => w.id !== selectedWireId));
       setSelectedWireId(null);
       setIsPropDialogOpen(false);
@@ -1122,6 +1173,8 @@ const App = () => {
     setIsLibraryOpen(false);
     setLoadedExampleTitle(name);
     setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {} });
+    setPast([]);
+    setFuture([]);
     prevState.current = { vNodes: {}, branchI: {} };
     diodeStatesRef.current = {};
     burnedStatesRef.current = {};
@@ -1130,12 +1183,14 @@ const App = () => {
 
   const rotateSelected = () => {
     if (selectedIds.length > 0) {
+      pushStateToHistory(components, wires);
       setComponents(prev => prev.map(c => selectedIds.includes(c.id) ? { ...c, rotation: (c.rotation + 90) % 360 } : c));
     }
   };
 
   const clearWorkspace = () => {
     if (confirmClear) {
+      pushStateToHistory(components, wires);
       setComponents([]);
       setWires([]);
       setPan({ x: 0, y: 0 });
@@ -1150,7 +1205,10 @@ const App = () => {
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
       setTick(0);
-      localStorage.clear();
+      localStorage.removeItem('circuit_components');
+      localStorage.removeItem('circuit_wires');
+      localStorage.removeItem('circuit_pan');
+      localStorage.removeItem('circuit_zoom');
     } else {
       setConfirmClear(true);
       setTimeout(() => setConfirmClear(false), 3000); 
@@ -1530,6 +1588,17 @@ const App = () => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+         e.preventDefault();
+         if (e.shiftKey) redo();
+         else undo();
+         return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+         e.preventDefault();
+         redo();
+         return;
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
       } else if (e.key.toLowerCase() === 'r') {
@@ -1549,7 +1618,7 @@ const App = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedIds, selectedWireId]);
+  }, [selectedIds, selectedWireId, components, wires, past, future]);
 
   // --- Render Helpers ---
   const getTerminalCoords = (comp, termIdx) => {
@@ -1848,6 +1917,24 @@ const App = () => {
         {/* Toolbar */}
         <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[95%] md:w-auto cyber-panel px-1.5 py-1 rounded-sm flex items-center justify-between md:justify-center gap-1 shadow-lg z-20">
           <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5">
+            <button 
+              onClick={undo}
+              disabled={past.length === 0}
+              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Undo (Ctrl+Z)"
+            >
+              <Undo size={14} />
+            </button>
+            <button 
+              onClick={redo}
+              disabled={future.length === 0}
+              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Redo (Ctrl+Y)"
+            >
+              <Redo size={14} />
+            </button>
+          </div>
+          <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5 pl-1">
             <button 
               onClick={rotateSelected}
               disabled={selectedIds.length === 0}
@@ -2251,7 +2338,20 @@ const App = () => {
                             const newVal = parseFloat(e.target.value);
                             setComponents(prev => prev.map(c => c.id === comp.id ? { ...c, props: { ...c.props, position: newVal } } : c));
                           }}
-                          onPointerDown={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                             e.stopPropagation();
+                             dragSnapshotRef.current = { components, wires };
+                          }}
+                          onPointerUp={(e) => {
+                             e.stopPropagation();
+                             if (dragSnapshotRef.current) {
+                                const oldComp = dragSnapshotRef.current.components.find(c => c.id === comp.id);
+                                if (oldComp && oldComp.props.position !== comp.props.position) {
+                                   pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+                                }
+                                dragSnapshotRef.current = null;
+                             }
+                          }}
                           className="w-full h-full m-0 cursor-pointer touch-auto accent-cyan-400"
                           title="Adjust Wiper Position"
                         />
@@ -2319,7 +2419,10 @@ const App = () => {
                         <label className="block text-[9px] font-semibold text-cyan-600 mb-1 uppercase tracking-wider cyber-text">{key}</label>
                         {typeof val === 'boolean' ? (
                           <button 
-                            onClick={() => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: !val } } : c))}
+                            onClick={() => {
+                              pushStateToHistory(components, wires);
+                              setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: !val } } : c))
+                            }}
                             className={`w-full py-1.5 rounded-sm text-[10px] font-medium transition-colors border ${val ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700/50' : 'bg-black text-cyan-700 border-cyan-900/50'}`}
                           >
                             {val ? 'TRUE (OPEN)' : 'FALSE (CLOSED)'}
@@ -2329,6 +2432,16 @@ const App = () => {
                             <input 
                               type="range" min="0" max="100" step="0.1" value={val}
                               onChange={(e) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: parseFloat(e.target.value) } } : c))}
+                              onPointerDown={(e) => { dragSnapshotRef.current = { components, wires }; }}
+                              onPointerUp={(e) => {
+                                 if (dragSnapshotRef.current) {
+                                    const oldComp = dragSnapshotRef.current.components.find(c => c.id === selectedIds[0]);
+                                    if (oldComp && oldComp.props[key] !== val) {
+                                       pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+                                    }
+                                    dragSnapshotRef.current = null;
+                                 }
+                              }}
                               className="w-full accent-cyan-500"
                             />
                             <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{Number(val).toFixed(1)}%</span>
@@ -2336,6 +2449,7 @@ const App = () => {
                         ) : (
                           <input 
                             type={typeof val === 'number' ? 'number' : 'text'} value={val}
+                            onFocus={() => { dragSnapshotRef.current = { components, wires }; }}
                             onChange={(e) => {
                               let raw = e.target.value;
                               let newVal = typeof val === 'number' ? (raw === '' ? '' : parseFloat(raw)) : raw;
@@ -2351,6 +2465,14 @@ const App = () => {
                               if (key === 'frequency' && (val === '' || val <= 0)) finalVal = 1;
                               if (finalVal !== val) {
                                 setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: finalVal } } : c));
+                              }
+
+                              if (dragSnapshotRef.current) {
+                                 const oldComp = dragSnapshotRef.current.components.find(c => c.id === selectedIds[0]);
+                                 if (oldComp && oldComp.props[key] !== finalVal) {
+                                    pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+                                 }
+                                 dragSnapshotRef.current = null;
                               }
                             }}
                             className="w-full cyber-input rounded-sm p-1.5 text-[10px]"
@@ -2506,6 +2628,7 @@ const App = () => {
                         <label className="block text-[9px] font-semibold text-cyan-600 mb-1 uppercase tracking-wider cyber-text">{key}</label>
                         <input 
                           type="number" value={val}
+                          onFocus={() => { dragSnapshotRef.current = { components, wires }; }}
                           onChange={(e) => {
                             let newVal = parseFloat(e.target.value);
                             setWires(prev => prev.map(w => w.id === selectedWireId ? { ...w, props: { ...w.props, [key]: newVal } } : w));
@@ -2515,6 +2638,14 @@ const App = () => {
                             if (key === 'maxCurrent' && (val === '' || val <= 0)) finalVal = 0.1;
                             if (finalVal !== val) {
                               setWires(prev => prev.map(w => w.id === selectedWireId ? { ...w, props: { ...w.props, [key]: finalVal } } : w));
+                            }
+
+                            if (dragSnapshotRef.current) {
+                               const oldWire = dragSnapshotRef.current.wires.find(w => w.id === selectedWireId);
+                               if (oldWire && oldWire.props[key] !== finalVal) {
+                                  pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+                               }
+                               dragSnapshotRef.current = null;
                             }
                           }}
                           className="w-full cyber-input rounded-sm p-1.5 text-[10px]"
@@ -2608,6 +2739,8 @@ const App = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">R</kbd> - Rotate selected component</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Del / Backspace</kbd> - Delete selected</div>
+                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Z</kbd> - Undo</div>
+                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Y</kbd> - Redo</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">S</kbd> - Toggle Simulation</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Esc</kbd> - Deselect all / Close dialogs</div>
                 </div>

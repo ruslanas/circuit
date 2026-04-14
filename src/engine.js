@@ -100,6 +100,7 @@ export function simulateTick({
     let vSources = [];
     let iSources = []; 
     let cccs = [];     
+    let transformers = [];
 
     wires.forEach(w => {
       const n1 = tNodes[`${w.from.compId}-${w.from.termIdx}`];
@@ -122,8 +123,15 @@ export function simulateTick({
       const n2 = vc.virtualTerminals[2] !== undefined ? tNodes[vc.virtualTerminals[2]] : null;
 
       if (burnedStates[baseId]) {
-        if (n0 !== undefined && n1 !== undefined) resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id + "_burn1" });
-        if (n1 !== undefined && n2 !== undefined && n2 !== null) resistors.push({ n1: n1, n2: n2, R: 1e9, id: vc.id + "_burn2" });
+        if (vc.type === 'TRANSFORMER') {
+          const nS1 = tNodes[vc.virtualTerminals[2]];
+          const nS2 = tNodes[vc.virtualTerminals[3]];
+          if (n0 !== undefined && n1 !== undefined) resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id + "_burnP" });
+          if (nS1 !== undefined && nS2 !== undefined) resistors.push({ n1: nS1, n2: nS2, R: 1e9, id: vc.id + "_burnS" });
+        } else {
+          if (n0 !== undefined && n1 !== undefined) resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id + "_burn1" });
+          if (n1 !== undefined && n2 !== undefined && n2 !== null) resistors.push({ n1: n1, n2: n2, R: 1e9, id: vc.id + "_burn2" });
+        }
         return;
       }
 
@@ -176,6 +184,15 @@ export function simulateTick({
         } else {
           resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id });
         }
+      } else if (vc.type === 'TRANSFORMER') {
+        transformers.push({
+          nP1: n0, nP2: n1,
+          nS1: tNodes[vc.virtualTerminals[2]], nS2: tNodes[vc.virtualTerminals[3]],
+          L1: Math.max(1e-9, vc.props.primaryL !== undefined ? vc.props.primaryL : 1),
+          L2: Math.max(1e-9, vc.props.secondaryL !== undefined ? vc.props.secondaryL : 1),
+          K: Math.max(0, Math.min(0.999, vc.props.coupling !== undefined ? vc.props.coupling : 0.99)),
+          id: vc.id
+        });
       } else if (vc.type === 'NPN') {
         const state = diodeStates[vc.id];
         const beta = vc.props.beta || 100;
@@ -207,8 +224,9 @@ export function simulateTick({
       }
     });
 
-    const M = vSources.length;
-    const size = (N - 1) + M;
+    const M_v = vSources.length;
+    const M_t = transformers.length;
+    const size = (N - 1) + M_v + 2 * M_t;
     if (size <= 0) break; 
     
     let A = Array(size).fill(0).map(() => Array(size).fill(0));
@@ -232,6 +250,36 @@ export function simulateTick({
       if (vs.nNeg !== undefined && vs.nNeg > 0) { A[vs.nNeg-1][idx] -= 1; A[idx][vs.nNeg-1] -= 1; }
       A[idx][idx] = -(vs.Rs || 1e-4);
       b[idx] = vs.V;
+    });
+
+    transformers.forEach((tr, t) => {
+      const idx1 = (N - 1) + M_v + 2 * t;
+      const idx2 = (N - 1) + M_v + 2 * t + 1;
+
+      const R11 = tr.L1 / dt;
+      const R22 = tr.L2 / dt;
+      const M_mut = tr.K * Math.sqrt(tr.L1 * tr.L2);
+      const R12 = M_mut / dt;
+
+      const i1_prev = prevState.branchI[`${tr.id}_1`] || 0;
+      const i2_prev = prevState.branchI[`${tr.id}_2`] || 0;
+
+      const V1eq = R11 * i1_prev + R12 * i2_prev;
+      const V2eq = R12 * i1_prev + R22 * i2_prev;
+
+      if (tr.nP1 !== undefined && tr.nP1 > 0) { A[tr.nP1 - 1][idx1] += 1; A[idx1][tr.nP1 - 1] += 1; }
+      if (tr.nP2 !== undefined && tr.nP2 > 0) { A[tr.nP2 - 1][idx1] -= 1; A[idx1][tr.nP2 - 1] -= 1; }
+      
+      if (tr.nS1 !== undefined && tr.nS1 > 0) { A[tr.nS1 - 1][idx2] += 1; A[idx2][tr.nS1 - 1] += 1; }
+      if (tr.nS2 !== undefined && tr.nS2 > 0) { A[tr.nS2 - 1][idx2] -= 1; A[idx2][tr.nS2 - 1] -= 1; }
+
+      A[idx1][idx1] = -R11;
+      A[idx1][idx2] = -R12;
+      b[idx1] = -V1eq;
+
+      A[idx2][idx2] = -R22;
+      A[idx2][idx1] = -R12;
+      b[idx2] = -V2eq;
     });
 
     cccs.forEach(src => {
@@ -404,6 +452,17 @@ export function simulateTick({
         if (Math.abs(current) > 1e-4) activeMap[vs.id.split('_')[0]] = true;
       });
       
+      transformers.forEach((tr, t) => {
+        const i1 = x[(N - 1) + M_v + 2 * t] || 0;
+        const i2 = x[(N - 1) + M_v + 2 * t + 1] || 0;
+        branchCurrentsMap[`${tr.id}_1`] = i1;
+        branchCurrentsMap[`${tr.id}_2`] = i2;
+        branchCurrentsMap[tr.id] = Math.max(Math.abs(i1), Math.abs(i2)); 
+        prevState.branchI[`${tr.id}_1`] = i1;
+        prevState.branchI[`${tr.id}_2`] = i2;
+        if (Math.abs(i1) > 1e-5 || Math.abs(i2) > 1e-5) activeMap[tr.id.split('_')[0]] = true;
+      });
+
       expandedComponents.forEach(vc => {
         if (vc.type === 'CAPACITOR') {
           const C = Math.max(1e-12, vc.props.capacitance !== undefined ? vc.props.capacitance : 0.0001);
@@ -511,7 +570,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'SWITCH'].includes(type)) {
+      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'SWITCH', 'TRANSFORMER'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {

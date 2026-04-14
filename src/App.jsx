@@ -83,6 +83,15 @@ const InductorSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const TransformerSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M4 2 v4 c3 0 3 4 0 4 c3 0 3 4 0 4 c3 0 3 4 0 4 v4" />
+    <line x1="10" y1="4" x2="10" y2="20" />
+    <line x1="14" y1="4" x2="14" y2="20" />
+    <path d="M20 2 v4 c-3 0 -3 4 0 4 c-3 0 -3 4 0 4 c-3 0 -3 4 0 4 v4" />
+  </svg>
+);
+
 const LedSymbol = ({ size, className, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="0" y1="12" x2="24" y2="12" />
@@ -219,6 +228,15 @@ const COMPONENT_TYPES = {
     terminals: [{ x: 0, y: 30 }, { x: 80, y: 30 }],
     defaultProps: { inductance: 0.01, maxCurrent: 1 }
   },
+  TRANSFORMER: {
+    id: 'TRANSFORMER', name: 'Transformer', desc: 'Coupled inductors for stepping AC voltage up/down.',
+    icon: TransformerSymbol, color: '#facc15',
+    terminals: [
+      { x: 0, y: 10, type: 'p1' }, { x: 0, y: 50, type: 'p2' },
+      { x: 80, y: 10, type: 's1' }, { x: 80, y: 50, type: 's2' }
+    ],
+    defaultProps: { primaryL: 1, secondaryL: 1, coupling: 0.99, maxCurrent: 5 }
+  },
   POTENTIOMETER: {
     id: 'POTENTIOMETER', name: 'Potentiometer', desc: 'Adjustable voltage divider.',
     icon: PotentiometerSymbol, color: '#facc15',
@@ -281,7 +299,7 @@ const COMPONENT_TYPES = {
 
 const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'GROUND'],
-  'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'POTENTIOMETER', 'SWITCH'],
+  'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE'],
   'Outputs': ['LED', 'MOTOR', 'SERVO']
 };
@@ -340,6 +358,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'RESISTOR' || comp.type === 'MOTOR') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'CAPACITOR') return formatUnit(comp.props.capacitance, 'F');
   if (comp.type === 'INDUCTOR') return formatUnit(comp.props.inductance, 'H');
+  if (comp.type === 'TRANSFORMER') return `${formatUnit(comp.props.primaryL, 'H')}:${formatUnit(comp.props.secondaryL, 'H')}`;
   if (comp.type === 'LED') return `${comp.props.forwardVoltage}V ${comp.props.color}`;
   if (comp.type === 'DIODE') return `${comp.props.forwardVoltage}V`;
   if (comp.type === 'POTENTIOMETER') return `${formatUnit(comp.props.resistance, 'Ω')} (${comp.props.position}%)`;
@@ -350,7 +369,7 @@ const getComponentValueLabel = (comp) => {
 
 const parseSpiceValue = (str) => {
   if (!str) return 0;
-  const match = str.match(/^(-?[\d.]+)(k|m|u|n|p|meg|g|t)?/i);
+  const match = str.match(/^(-?[\d.]+(?:e[-+]?\d+)?)(k|m|u|n|p|meg|g|t)?/i);
   if (!match) return parseFloat(str) || 0;
   const val = parseFloat(match[1]);
   const unit = (match[2] || '').toLowerCase();
@@ -584,6 +603,26 @@ const EXAMPLES = [
         { id: "w8", from: { compId: "hb", termIdx: 5 }, to: { compId: "mot", termIdx: 1 }, props: { maxCurrent: 5 } }
       ]
     }
+  },
+  {
+    name: "AC Transformer Step-Down",
+    data: {
+      components: [
+        { id: "ac", type: "AC_SOURCE", x: 100, y: 150, rotation: 0, props: { voltage: 120, frequency: 2 } },
+        { id: "tr", type: "TRANSFORMER", x: 260, y: 130, rotation: 0, props: { primaryL: 20, secondaryL: 0.2, coupling: 0.99 } },
+        { id: "res", type: "RESISTOR", x: 420, y: 150, rotation: 90, props: { resistance: 10 } },
+        { id: "gnd1", type: "GROUND", x: 100, y: 250, rotation: 0, props: {} },
+        { id: "gnd2", type: "GROUND", x: 420, y: 250, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "ac", termIdx: 0 }, to: { compId: "tr", termIdx: 0 } },
+        { id: "w2", from: { compId: "ac", termIdx: 1 }, to: { compId: "gnd1", termIdx: 0 } },
+        { id: "w3", from: { compId: "tr", termIdx: 1 }, to: { compId: "gnd1", termIdx: 0 } },
+        { id: "w4", from: { compId: "tr", termIdx: 2 }, to: { compId: "res", termIdx: 0 } },
+        { id: "w5", from: { compId: "tr", termIdx: 3 }, to: { compId: "gnd2", termIdx: 0 } },
+        { id: "w6", from: { compId: "res", termIdx: 1 }, to: { compId: "gnd2", termIdx: 0 } }
+      ]
+    }
   }
 ];
 
@@ -810,6 +849,7 @@ const App = () => {
             val = (simData.voltages[`${comp.id}-0`] || 0) - (simData.voltages[`${comp.id}-1`] || 0);
             unit = 'V';
         }
+        else if (comp.type === 'TRANSFORMER') val = simData.currents[`${comp.id}_1`] || 0;
         else val = simData.currents[comp.id] || 0;
       }
     }
@@ -1236,7 +1276,7 @@ const App = () => {
 
     const lines = normalizedText.split(/\r\n|\n|\r/)
       .map(l => l.split(';')[0].trim())
-      .filter(l => l && !l.startsWith('*') && !l.toLowerCase().startsWith('.end') && !l.toLowerCase().startsWith('.model') && !l.toLowerCase().startsWith('.subckt'));
+      .filter(l => l && !l.startsWith('*') && !l.startsWith('.'));
     const newComps = [];
     const nodes = {};
 
@@ -1251,9 +1291,34 @@ const App = () => {
       let type, props = {}, terminals = [];
       
       if (compName.startsWith('V')) {
-         type = 'BATTERY';
          terminals = [parts[1], parts[2]];
-         props.voltage = parseSpiceValue(parts[parts.length - 1]);
+         const upperLine = line.toUpperCase();
+         if (upperLine.includes('SINE') || upperLine.includes('SIN(') || upperLine.includes('SIN ')) {
+           type = 'AC_SOURCE';
+           const sineMatch = upperLine.match(/SIN(?:E)?\s*\(?\s*[^\s,]+[\s,]+([^\s,]+)[\s,]+([^\s,)]+)/);
+           props.voltage = sineMatch ? parseSpiceValue(sineMatch[1]) : 12;
+           props.frequency = sineMatch ? parseSpiceValue(sineMatch[2]) : 1;
+         } else if (upperLine.includes('PULSE')) {
+           type = 'PWM';
+           const pulseMatch = upperLine.match(/PULSE\s*\(?\s*[^\s,]+[\s,]+([^\s,]+)[\s,]+[^\s,]+[\s,]+[^\s,]+[\s,]+[^\s,]+[\s,]+([^\s,]+)[\s,]+([^\s,)]+)/);
+           if (pulseMatch) {
+             props.voltage = parseSpiceValue(pulseMatch[1]);
+             const pw = parseSpiceValue(pulseMatch[2]);
+             const per = parseSpiceValue(pulseMatch[3]);
+             props.frequency = per > 0 ? 1 / per : 1;
+             props.dutyCycle = per > 0 ? (pw / per) * 100 : 50;
+           } else {
+             props.voltage = 5;
+           }
+         } else {
+           type = 'BATTERY';
+           const dcIdx = parts.findIndex(p => p.toUpperCase() === 'DC');
+           if (dcIdx !== -1 && parts.length > dcIdx + 1) {
+             props.voltage = parseSpiceValue(parts[dcIdx + 1]);
+           } else {
+             props.voltage = parseSpiceValue(parts[3]);
+           }
+         }
       } else if (compName.startsWith('R')) {
          type = 'RESISTOR';
          terminals = [parts[1], parts[2]];
@@ -1544,6 +1609,14 @@ const App = () => {
             const nOut1 = getNetName(c.id, 4);
             const nOut2 = getNetName(c.id, 5);
             spice += `X${name} ${nVcc} ${nGnd} ${nIn1} ${nIn2} ${nOut1} ${nOut2} HBRIDGE\n`;
+        }
+        else if (c.type === 'TRANSFORMER') {
+            const lp = Math.max(1e-9, c.props.primaryL !== undefined ? c.props.primaryL : 1);
+            const ls = Math.max(1e-9, c.props.secondaryL !== undefined ? c.props.secondaryL : 1);
+            const k = Math.max(0, Math.min(0.999, c.props.coupling !== undefined ? c.props.coupling : 0.99));
+            spice += `L${name}_P ${n0} ${n1} ${lp}\n`;
+            spice += `L${name}_S ${getNetName(c.id, 2)} ${getNetName(c.id, 3)} ${ls}\n`;
+            spice += `K${name} L${name}_P L${name}_S ${k}\n`;
         }
     });
 
@@ -2278,7 +2351,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -2460,9 +2533,10 @@ const App = () => {
                               if (['resistance', 'pullupRes', 'driveRes', 'inRes', 'sigRes'].includes(key) && (val === '' || val < 0.001)) finalVal = 0.001;
                               if (key === 'beta' && (val === '' || val < 1)) finalVal = 1;
                               if (key === 'capacitance' && (val === '' || val < 1e-12)) finalVal = 1e-12;
-                              if (key === 'inductance' && (val === '' || val < 1e-9)) finalVal = 1e-9;
+                              if (['inductance', 'primaryL', 'secondaryL'].includes(key) && (val === '' || val < 1e-9)) finalVal = 1e-9;
                               if (key === 'dutyCycle') finalVal = Math.max(0, Math.min(100, val === '' ? 50 : val));
                               if (key === 'frequency' && (val === '' || val <= 0)) finalVal = 1;
+                              if (key === 'coupling') finalVal = Math.max(0, Math.min(0.999, val === '' ? 0.99 : val));
                               if (finalVal !== val) {
                                 setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: finalVal } } : c));
                               }
@@ -2545,10 +2619,19 @@ const App = () => {
                                 </>
                               );
                            })() : (
+                              comp.type === 'TRANSFORMER' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_pri</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_pri</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_1`], 'A')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_sec</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-3`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_sec</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_2`], 'A')}</span></div>
+                                </>
+                              ) : (
                               <>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V Drop</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Current</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
                               </>
+                              )
                            )}
                        </div>
                        {renderWaveform()}
@@ -2699,8 +2782,36 @@ const App = () => {
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4 bg-[#050507]">
-              <pre className="text-[11px] md:text-xs text-cyan-300 font-mono whitespace-pre-wrap select-text">
-                {spiceViewerCode}
+              <pre className="text-[11px] md:text-xs font-mono whitespace-pre-wrap select-text">
+                {spiceViewerCode.split('\n').map((line, i) => {
+                  if (!line.trim() && line === '') return <div key={i} className="h-4"></div>;
+                  if (line.trim().startsWith('*')) return <div key={i} className="text-green-500/80 italic">{line}</div>;
+                  if (line.trim().startsWith('.')) {
+                    const parts = line.split(/(\s+)/);
+                    return (
+                      <div key={i}>
+                        <span className="text-pink-500 font-bold">{parts[0]}</span>
+                        <span className="text-cyan-300">{parts.slice(1).join('')}</span>
+                      </div>
+                    );
+                  }
+                  const tokens = line.match(/(\s+)|([()=])|([^\s()=]+)/g) || [];
+                  let isFirst = true;
+                  return (
+                    <div key={i}>
+                      {tokens.map((tok, j) => {
+                        if (!tok.trim()) return <span key={j}>{tok}</span>;
+                        if (['(', ')', '='].includes(tok)) return <span key={j} className="text-cyan-500/70">{tok}</span>;
+                        if (isFirst) { isFirst = false; return <span key={j} className="text-yellow-400 font-bold">{tok}</span>; }
+                        const uTok = tok.toUpperCase();
+                        if (['DC','AC','SINE','PULSE'].includes(uTok)) return <span key={j} className="text-purple-400 font-bold">{tok}</span>;
+                        if (/^-?\d+(\.\d+)?(e[-+]?\d+)?(K|M|U|N|P|MEG|G|T)?$/i.test(tok)) return <span key={j} className="text-orange-400">{tok}</span>;
+                        if (tok === '0' || tok.startsWith('N_') || tok.startsWith('net_') || ['vcc', 'gnd', 'in1', 'in2', 'out1', 'out2'].includes(tok)) return <span key={j} className="text-cyan-300">{tok}</span>;
+                        return <span key={j} className="text-cyan-100">{tok}</span>;
+                      })}
+                    </div>
+                  );
+                })}
               </pre>
             </div>
           </div>

@@ -6,9 +6,22 @@ export function simulateTick({
   diodeStates,
   burnedStates = {},
   COMPONENT_TYPES,
-  COMPOUND_MODELS
+  COMPOUND_MODELS,
+  dt = 0.05
 }) {
-  const dt = 0.05; // 50ms simulation step
+  
+  function compilePLC(expr) {
+    try {
+      let e = String(expr).toUpperCase()
+        .replace(/\bAND\b/g, '&&').replace(/\bOR\b/g, '||')
+        .replace(/\bNOT\b/g, '!').replace(/\bXOR\b/g, '!==')
+        .replace(/[^I01&|!=()\s]/g, '');
+      return new Function('I0', 'I1', `return !!(${e});`);
+    } catch(err) {
+      return () => false;
+    }
+  }
+  
   let tNodes = {};
   let tCount = 0;
   
@@ -94,12 +107,94 @@ export function simulateTick({
   let wireCurrentsMap = {};
   let activeMap = {};
 
+  // Setup and evaluate logic states directly reflecting previous tick memory state
+  if (!prevState.ramData) prevState.ramData = {};
+  if (!prevState.ic555) prevState.ic555 = {};
+  if (!prevState.plcData) prevState.plcData = {};
+  if (!prevState.shiftRegisterData) prevState.shiftRegisterData = {};
+
+  expandedComponents.forEach(vc => {
+    if (vc.type === 'RAM') {
+      if (!prevState.ramData[vc.id]) prevState.ramData[vc.id] = [0, 0, 0, 0];
+      
+      const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+      const vA0 = (prevState.vNodes[vc.virtualTerminals[2]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+      const vA1 = (prevState.vNodes[vc.virtualTerminals[3]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+      const vDin = (prevState.vNodes[vc.virtualTerminals[4]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+      const vWe = (prevState.vNodes[vc.virtualTerminals[5]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+
+      const logicHigh = vVcc > 2.5 ? vVcc * 0.5 : 2.5; 
+      const addr = (vA1 > logicHigh ? 2 : 0) + (vA0 > logicHigh ? 1 : 0);
+      
+      if (vVcc > 2.0 && vWe > logicHigh) {
+        prevState.ramData[vc.id][addr] = vDin > logicHigh ? 1 : 0;
+      }
+    } else if (vc.type === 'TIMER555') {
+      if (prevState.ic555[vc.id] === undefined) prevState.ic555[vc.id] = 0;
+      const vGnd = prevState.vNodes[vc.virtualTerminals[0]] || 0;
+      const vVcc = (prevState.vNodes[vc.virtualTerminals[7]] || 0) - vGnd;
+      const vTrig = (prevState.vNodes[vc.virtualTerminals[1]] || 0) - vGnd;
+      const vReset = (prevState.vNodes[vc.virtualTerminals[3]] || 0) - vGnd;
+      const vCtrl = (prevState.vNodes[vc.virtualTerminals[4]] || 0) - vGnd;
+      const vThres = (prevState.vNodes[vc.virtualTerminals[5]] || 0) - vGnd;
+
+      let q = prevState.ic555[vc.id];
+      if (vVcc < 2.0 || vReset < 0.7) {
+        q = 0;
+      } else {
+        const vTrigRef = vCtrl / 2;
+        if (vTrig < vTrigRef) q = 1;
+        else if (vThres > vCtrl) q = 0;
+      }
+      
+      prevState.ic555[vc.id] = q;
+    } else if (vc.type === 'PLC') {
+      if (!prevState.plcData[vc.id]) prevState.plcData[vc.id] = { out0: 0, out1: 0, fn0: null, fn1: null, prog0: null, prog1: null };
+      
+      if (prevState.plcData[vc.id].prog0 !== vc.props.prog0) {
+         prevState.plcData[vc.id].prog0 = vc.props.prog0;
+         prevState.plcData[vc.id].fn0 = compilePLC(vc.props.prog0);
+      }
+      if (prevState.plcData[vc.id].prog1 !== vc.props.prog1) {
+         prevState.plcData[vc.id].prog1 = vc.props.prog1;
+         prevState.plcData[vc.id].fn1 = compilePLC(vc.props.prog1);
+      }
+
+      const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+      const logicHigh = vVcc > 2.5 ? vVcc * 0.5 : 2.5; 
+      const I0 = ((prevState.vNodes[vc.virtualTerminals[2]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0)) > logicHigh;
+      const I1 = ((prevState.vNodes[vc.virtualTerminals[3]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0)) > logicHigh;
+
+      prevState.plcData[vc.id].out0 = prevState.plcData[vc.id].fn0(I0, I1) ? 1 : 0;
+      prevState.plcData[vc.id].out1 = prevState.plcData[vc.id].fn1(I0, I1) ? 1 : 0;
+    } else if (vc.type === 'SHIFT_REGISTER') {
+      if (!prevState.shiftRegisterData[vc.id]) {
+        prevState.shiftRegisterData[vc.id] = { bits: [0,0,0,0], lastClk: 0 };
+      }
+      
+      const vGnd = prevState.vNodes[vc.virtualTerminals[1]] || 0;
+      const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - vGnd;
+      const vClk = (prevState.vNodes[vc.virtualTerminals[3]] || 0) - vGnd;
+      const vData = (prevState.vNodes[vc.virtualTerminals[2]] || 0) - vGnd;
+
+      const logicHigh = vVcc > 2.5 ? vVcc * 0.5 : 2.5;
+      const lastClkState = prevState.shiftRegisterData[vc.id].lastClk;
+
+      if (lastClkState < logicHigh * 0.5 && vClk >= logicHigh) {
+        const currentBits = prevState.shiftRegisterData[vc.id].bits;
+        prevState.shiftRegisterData[vc.id].bits = [vData >= logicHigh ? 1 : 0, ...currentBits.slice(0, 3)];
+      }
+      prevState.shiftRegisterData[vc.id].lastClk = vClk;
+    }
+  });
+
   // Iterative solver
   for (let iter = 0; iter < 10; iter++) {
     let resistors = [];
     let vSources = [];
     let iSources = []; 
     let cccs = [];     
+    let vcvs = [];
     let transformers = [];
 
     wires.forEach(w => {
@@ -129,8 +224,9 @@ export function simulateTick({
           if (n0 !== undefined && n1 !== undefined) resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id + "_burnP" });
           if (nS1 !== undefined && nS2 !== undefined) resistors.push({ n1: nS1, n2: nS2, R: 1e9, id: vc.id + "_burnS" });
         } else {
+          // Treat N1 as default fail-safe pin for standard 2+ pins including RAM.
           if (n0 !== undefined && n1 !== undefined) resistors.push({ n1: n0, n2: n1, R: 1e9, id: vc.id + "_burn1" });
-          if (n1 !== undefined && n2 !== undefined && n2 !== null) resistors.push({ n1: n1, n2: n2, R: 1e9, id: vc.id + "_burn2" });
+          if (n1 !== undefined && n2 !== undefined && n2 !== null && vc.type !== 'RAM' && vc.type !== 'TIMER555') resistors.push({ n1: n1, n2: n2, R: 1e9, id: vc.id + "_burn2" });
         }
         return;
       }
@@ -154,6 +250,25 @@ export function simulateTick({
           const t_mod = t % period;
           V = (t_mod < period * (duty / 100)) ? (vc.props.voltage || 5) : 0;
         }
+        vSources.push({ nPos: n0, nNeg: n1, V: V, Rs: 0.01, id: vc.id });
+      } else if (vc.type === 'OSCILLATOR') {
+        const t = tick * dt;
+        const freq = vc.props.frequency !== undefined ? vc.props.frequency : 1;
+        const amp = vc.props.voltage !== undefined ? vc.props.voltage : 5;
+        const offset = vc.props.offset || 0;
+        const period = 1 / Math.max(0.001, freq);
+        const phase = (t % period) / period; 
+
+        let V = offset;
+        const wave = vc.props.waveform || 'SINE';
+        if (wave === 'SINE') V += amp * Math.sin(2 * Math.PI * phase);
+        else if (wave === 'SQUARE') V += phase < 0.5 ? amp : -amp;
+        else if (wave === 'TRIANGLE') {
+          if (phase < 0.25) V += amp * (phase / 0.25);
+          else if (phase < 0.75) V += amp * (1 - 2 * (phase - 0.25) / 0.5);
+          else V += amp * (-1 + (phase - 0.75) / 0.25);
+        } else if (wave === 'SAW') V += amp * (2 * phase - 1);
+        
         vSources.push({ nPos: n0, nNeg: n1, V: V, Rs: 0.01, id: vc.id });
       } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR') {
         const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' ? 10 : 1000);
@@ -193,6 +308,139 @@ export function simulateTick({
           K: Math.max(0, Math.min(0.999, vc.props.coupling !== undefined ? vc.props.coupling : 0.99)),
           id: vc.id
         });
+      } else if (vc.type === 'RAM') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nA0 = tNodes[vc.virtualTerminals[2]];
+        const nA1 = tNodes[vc.virtualTerminals[3]];
+        const nDin = tNodes[vc.virtualTerminals[4]];
+        const nWe = tNodes[vc.virtualTerminals[5]];
+        const nOut = tNodes[vc.virtualTerminals[6]];
+
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 10000, id: vc.id + "_VCC" });
+        if(nA0 !== undefined && nGnd !== undefined) resistors.push({ n1: nA0, n2: nGnd, R: 1e6, id: vc.id + "_RA0" });
+        if(nA1 !== undefined && nGnd !== undefined) resistors.push({ n1: nA1, n2: nGnd, R: 1e6, id: vc.id + "_RA1" });
+        if(nDin !== undefined && nGnd !== undefined) resistors.push({ n1: nDin, n2: nGnd, R: 1e6, id: vc.id + "_RDIN" });
+        if(nWe !== undefined && nGnd !== undefined) resistors.push({ n1: nWe, n2: nGnd, R: 1e6, id: vc.id + "_RWE" });
+
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const vA0 = (prevState.vNodes[vc.virtualTerminals[2]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const vA1 = (prevState.vNodes[vc.virtualTerminals[3]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const logicHigh = vVcc > 2.5 ? vVcc * 0.5 : 2.5; 
+        const addr = (vA1 > logicHigh ? 2 : 0) + (vA0 > logicHigh ? 1 : 0);
+        const outBit = prevState.ramData[vc.id][addr] || 0;
+        const vOutTarget = outBit === 1 ? (vVcc > 0 ? vVcc : 5) : 0;
+        vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 50, id: vc.id + "_OUT" });
+      } else if (vc.type === 'TIMER555') {
+        const nGnd = tNodes[vc.virtualTerminals[0]];
+        const nTrig = tNodes[vc.virtualTerminals[1]];
+        const nOut = tNodes[vc.virtualTerminals[2]];
+        const nReset = tNodes[vc.virtualTerminals[3]];
+        const nCtrl = tNodes[vc.virtualTerminals[4]];
+        const nThres = tNodes[vc.virtualTerminals[5]];
+        const nDisch = tNodes[vc.virtualTerminals[6]];
+        const nVcc = tNodes[vc.virtualTerminals[7]];
+
+        if (nVcc !== undefined && nCtrl !== undefined) resistors.push({ n1: nVcc, n2: nCtrl, R: 5000, id: vc.id + "_R1" });
+        if (nCtrl !== undefined && nGnd !== undefined) resistors.push({ n1: nCtrl, n2: nGnd, R: 10000, id: vc.id + "_R2" });
+
+        if (nTrig !== undefined && nGnd !== undefined) resistors.push({ n1: nTrig, n2: nGnd, R: 1e7, id: vc.id + "_RTrig" });
+        if (nThres !== undefined && nGnd !== undefined) resistors.push({ n1: nThres, n2: nGnd, R: 1e7, id: vc.id + "_RThres" });
+        if (nReset !== undefined && nGnd !== undefined) resistors.push({ n1: nReset, n2: nGnd, R: 1e7, id: vc.id + "_RReset" });
+        if (nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 5000, id: vc.id + "_RVcc" });
+
+        const q = prevState.ic555[vc.id] || 0;
+        const vVccVal = Math.max(0, (prevState.vNodes[vc.virtualTerminals[7]] || 0) - (prevState.vNodes[vc.virtualTerminals[0]] || 0));
+        const vOutTarget = q === 1 ? Math.max(0.1, vVccVal - 1.2) : 0.1;
+        vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 20, id: vc.id + "_OUT" });
+
+        const rDisch = q === 1 ? 1e9 : 10;
+        if (nDisch !== undefined && nGnd !== undefined) resistors.push({ n1: nDisch, n2: nGnd, R: rDisch, id: vc.id + "_RDisch" });
+      } else if (vc.type === 'OPAMP') {
+        const nPlus = tNodes[vc.virtualTerminals[0]];
+        const nMinus = tNodes[vc.virtualTerminals[1]];
+        const nOut = tNodes[vc.virtualTerminals[2]];
+        
+        if (nPlus !== undefined) resistors.push({ n1: nPlus, n2: 0, R: 1e9, id: vc.id + "_RinP" });
+        if (nMinus !== undefined) resistors.push({ n1: nMinus, n2: 0, R: 1e9, id: vc.id + "_RinM" });
+        
+        const vVcc = nodeVoltagesMap[vc.virtualTerminals[3]] || 15;
+        const vVee = nodeVoltagesMap[vc.virtualTerminals[4]] || -15;
+        const gain = vc.props.gain || 100000;
+        const vPlusVal = nodeVoltagesMap[vc.virtualTerminals[0]] || 0;
+        const vMinusVal = nodeVoltagesMap[vc.virtualTerminals[1]] || 0;
+        const idealOut = (vPlusVal - vMinusVal) * gain;
+
+        if (idealOut > vVcc - 1.0) vSources.push({ nPos: nOut, nNeg: undefined, V: vVcc - 1.0, Rs: 50, id: vc.id + "_OUT" });
+        else if (idealOut < vVee + 1.0) vSources.push({ nPos: nOut, nNeg: undefined, V: vVee + 1.0, Rs: 50, id: vc.id + "_OUT" });
+        else vcvs.push({ nPos: nOut, nNeg: undefined, nCtrlPlus: nPlus, nCtrlMinus: nMinus, gain: gain, Rs: 50, id: vc.id + "_OUT" });
+      } else if (vc.type === 'COMPARATOR') {
+        const nPlus = tNodes[vc.virtualTerminals[0]];
+        const nMinus = tNodes[vc.virtualTerminals[1]];
+        const nOut = tNodes[vc.virtualTerminals[2]];
+        
+        if (nPlus !== undefined) resistors.push({ n1: nPlus, n2: 0, R: 1e9, id: vc.id + "_RinP" });
+        if (nMinus !== undefined) resistors.push({ n1: nMinus, n2: 0, R: 1e9, id: vc.id + "_RinM" });
+        
+        const vPlusVal = prevState.vNodes[vc.virtualTerminals[0]] || 0;
+        const vMinusVal = prevState.vNodes[vc.virtualTerminals[1]] || 0;
+        const vVccVal = prevState.vNodes[vc.virtualTerminals[3]] || 0;
+        const vGndVal = prevState.vNodes[vc.virtualTerminals[4]] || 0;
+
+        const vOutTarget = (vPlusVal > vMinusVal) ? vVccVal : vGndVal;
+        vSources.push({ nPos: nOut, nNeg: undefined, V: vOutTarget, Rs: 50, id: vc.id + "_OUT" });
+      } else if (vc.type === 'SEVEN_SEGMENT') {
+        const nGnd = tNodes[vc.virtualTerminals[7]];
+        const fv = vc.props.forwardVoltage || 2.0;
+
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach((seg, i) => {
+            const nSeg = tNodes[vc.virtualTerminals[i]];
+            const segId = `${vc.id}_${seg}`;
+            if (diodeStates[segId] === undefined) diodeStates[segId] = false;
+
+            if (diodeStates[segId]) {
+                vSources.push({ nPos: nSeg, nNeg: nGnd, V: fv, Rs: 10.0, id: segId });
+            } else {
+                resistors.push({ n1: nSeg, n2: nGnd, R: 1e9, id: segId });
+            }
+        });
+      } else if (vc.type === 'PLC') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nIn0 = tNodes[vc.virtualTerminals[2]];
+        const nIn1 = tNodes[vc.virtualTerminals[3]];
+        const nOut0 = tNodes[vc.virtualTerminals[4]];
+        const nOut1 = tNodes[vc.virtualTerminals[5]];
+
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 10000, id: vc.id + "_VCC" });
+        if(nIn0 !== undefined && nGnd !== undefined) resistors.push({ n1: nIn0, n2: nGnd, R: 1e6, id: vc.id + "_RIN0" });
+        if(nIn1 !== undefined && nGnd !== undefined) resistors.push({ n1: nIn1, n2: nGnd, R: 1e6, id: vc.id + "_RIN1" });
+
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+
+        const vOut0Target = (prevState.plcData[vc.id]?.out0 === 1) ? (vVcc > 0 ? vVcc : 5) : 0;
+        const vOut1Target = (prevState.plcData[vc.id]?.out1 === 1) ? (vVcc > 0 ? vVcc : 5) : 0;
+
+        vSources.push({ nPos: nOut0, nNeg: nGnd, V: vOut0Target, Rs: 50, id: vc.id + "_OUT0" });
+        vSources.push({ nPos: nOut1, nNeg: nGnd, V: vOut1Target, Rs: 50, id: vc.id + "_OUT1" });
+      } else if (vc.type === 'SHIFT_REGISTER') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nData = tNodes[vc.virtualTerminals[2]];
+        const nClk = tNodes[vc.virtualTerminals[3]];
+        
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 10000, id: vc.id + "_VCC" });
+        if(nData !== undefined && nGnd !== undefined) resistors.push({ n1: nData, n2: nGnd, R: 1e6, id: vc.id + "_RDATA" });
+        if(nClk !== undefined && nGnd !== undefined) resistors.push({ n1: nClk, n2: nGnd, R: 1e6, id: vc.id + "_RCLK" });
+
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const bits = prevState.shiftRegisterData[vc.id]?.bits || [0,0,0,0];
+
+        bits.forEach((bit, i) => {
+            const nOut = tNodes[vc.virtualTerminals[4 + i]];
+            const vOutTarget = (bit === 1) ? (vVcc > 0 ? vVcc : 5) : 0;
+            vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 50, id: `${vc.id}_OUT${i}` });
+        });
       } else if (vc.type === 'NPN') {
         const state = diodeStates[vc.id];
         const beta = vc.props.beta || 100;
@@ -225,8 +473,9 @@ export function simulateTick({
     });
 
     const M_v = vSources.length;
+    const M_vcvs = vcvs.length;
     const M_t = transformers.length;
-    const size = (N - 1) + M_v + 2 * M_t;
+    const size = (N - 1) + M_v + M_vcvs + 2 * M_t;
     if (size <= 0) break; 
     
     let A = Array(size).fill(0).map(() => Array(size).fill(0));
@@ -252,9 +501,19 @@ export function simulateTick({
       b[idx] = vs.V;
     });
 
+    vcvs.forEach((vs, m) => {
+      const idx = (N - 1) + M_v + m;
+      if (vs.nPos !== undefined && vs.nPos > 0) { A[vs.nPos-1][idx] += 1; A[idx][vs.nPos-1] += 1; }
+      if (vs.nNeg !== undefined && vs.nNeg > 0) { A[vs.nNeg-1][idx] -= 1; A[idx][vs.nNeg-1] -= 1; }
+      if (vs.nCtrlPlus !== undefined && vs.nCtrlPlus > 0) { A[idx][vs.nCtrlPlus-1] -= vs.gain; }
+      if (vs.nCtrlMinus !== undefined && vs.nCtrlMinus > 0) { A[idx][vs.nCtrlMinus-1] += vs.gain; }
+      A[idx][idx] = -(vs.Rs || 1e-4);
+      b[idx] = 0;
+    });
+
     transformers.forEach((tr, t) => {
-      const idx1 = (N - 1) + M_v + 2 * t;
-      const idx2 = (N - 1) + M_v + 2 * t + 1;
+      const idx1 = (N - 1) + M_v + M_vcvs + 2 * t;
+      const idx2 = (N - 1) + M_v + M_vcvs + 2 * t + 1;
 
       const R11 = tr.L1 / dt;
       const R22 = tr.L2 / dt;
@@ -359,6 +618,25 @@ export function simulateTick({
           diodeStates[vc.id] = nextState; 
           changed = true; 
         }
+      } else if (vc.type === 'SEVEN_SEGMENT') {
+        const nGnd = vc.virtualTerminals[7];
+        const fv = vc.props.forwardVoltage || 2.0;
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach((seg, i) => {
+            const segId = `${vc.id}_${seg}`;
+            const nSeg = vc.virtualTerminals[i];
+            let currentState = diodeStates[segId];
+            let nextState = currentState;
+
+            if (!currentState) {
+                const vDrop = (nodeVoltagesMap[nSeg] || 0) - (nodeVoltagesMap[nGnd] || 0);
+                if (vDrop > fv) nextState = true;
+            } else {
+                const vIdx = vSources.findIndex(vs => vs.id === segId);
+                if (vIdx !== -1 && x[(N - 1) + vIdx] < -1e-6) nextState = false;
+            }
+            if (nextState !== currentState) diodeStates[segId] = nextState;
+        });
+        // No need to set changed=true for 7-seg as it's purely output and doesn't affect the matrix
       } else if (vc.type === 'NPN') {
         const state = diodeStates[vc.id];
         const vB = nodeVoltagesMap[vc.virtualTerminals[0]] || 0;
@@ -452,9 +730,15 @@ export function simulateTick({
         if (Math.abs(current) > 1e-4) activeMap[vs.id.split('_')[0]] = true;
       });
       
+      vcvs.forEach((vs, m) => {
+        const current = x[(N - 1) + M_v + m] || 0;
+        branchCurrentsMap[vs.id] = current;
+        if (Math.abs(current) > 1e-4) activeMap[vs.id.split('_')[0]] = true;
+      });
+
       transformers.forEach((tr, t) => {
-        const i1 = x[(N - 1) + M_v + 2 * t] || 0;
-        const i2 = x[(N - 1) + M_v + 2 * t + 1] || 0;
+        const i1 = x[(N - 1) + M_v + M_vcvs + 2 * t] || 0;
+        const i2 = x[(N - 1) + M_v + M_vcvs + 2 * t + 1] || 0;
         branchCurrentsMap[`${tr.id}_1`] = i1;
         branchCurrentsMap[`${tr.id}_2`] = i2;
         branchCurrentsMap[tr.id] = Math.max(Math.abs(i1), Math.abs(i2)); 
@@ -511,7 +795,50 @@ export function simulateTick({
             branchCurrentsMap[`${vc.id}_EB`] = iB;
             if (Math.abs(iC) > 1e-5 || Math.abs(iB) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
           }
+        } else if (vc.type === 'RAM') {
+          const vIdx = vSources.findIndex(vs => vs.id === vc.id + "_OUT");
+          const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+          branchCurrentsMap[vc.id] = iOut;
+          if (Math.abs(iOut) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'TIMER555') {
+          const vIdx = vSources.findIndex(vs => vs.id === vc.id + "_OUT");
+          const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+          branchCurrentsMap[vc.id] = iOut;
+          if (Math.abs(iOut) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'SHIFT_REGISTER') {
+            let totalCurrent = 0;
+            for (let i = 0; i < 4; i++) {
+                const vIdx = vSources.findIndex(vs => vs.id === `${vc.id}_OUT${i}`);
+                const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+                branchCurrentsMap[`${vc.id}_OUT${i}`] = iOut;
+                totalCurrent += Math.abs(iOut);
+            }
+            branchCurrentsMap[vc.id] = totalCurrent;
+            if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'PLC') {
+          const vIdx0 = vSources.findIndex(vs => vs.id === vc.id + "_OUT0");
+          const vIdx1 = vSources.findIndex(vs => vs.id === vc.id + "_OUT1");
+          const iOut0 = vIdx0 !== -1 ? x[(N - 1) + vIdx0] : 0;
+          const iOut1 = vIdx1 !== -1 ? x[(N - 1) + vIdx1] : 0;
+          branchCurrentsMap[`${vc.id}_OUT0`] = iOut0;
+          branchCurrentsMap[`${vc.id}_OUT1`] = iOut1;
+          branchCurrentsMap[vc.id] = Math.max(Math.abs(iOut0), Math.abs(iOut1));
+          if (Math.abs(iOut0) > 1e-5 || Math.abs(iOut1) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         }
+      });
+
+      if (!prevState.sevenSegmentData) prevState.sevenSegmentData = {};
+      validComponents.filter(c => c.type === 'SEVEN_SEGMENT').forEach(c => {
+        if (!prevState.sevenSegmentData[c.id]) prevState.sevenSegmentData[c.id] = {};
+        let totalCurrent = 0;
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(seg => {
+            const segId = `${c.id}_${seg}`;
+            const current = branchCurrentsMap[segId] || 0;
+            totalCurrent += Math.abs(current);
+            prevState.sevenSegmentData[c.id][seg] = current > 1e-4;
+        });
+        branchCurrentsMap[c.id] = totalCurrent;
+        if (totalCurrent > 1e-5) activeMap[c.id] = true;
       });
 
       validComponents.forEach(c => {
@@ -552,6 +879,10 @@ export function simulateTick({
       if (type === 'NPN') current = branchCurrentsMap[`${c.id}_CE`] || 0;
       else if (type === 'PNP') current = branchCurrentsMap[`${c.id}_EC`] || 0;
       else if (type === 'HBRIDGE') current = Math.max(Math.abs(branchCurrentsMap[`${c.id}_OUT1`] || 0), Math.abs(branchCurrentsMap[`${c.id}_OUT2`] || 0));
+      else if (type === 'SHIFT_REGISTER') {
+        current = 0;
+        for(let i=0; i<4; i++) current += Math.abs(branchCurrentsMap[`${c.id}_OUT${i}`] || 0);
+      }
       else current = branchCurrentsMap[c.id] || 0;
 
       const maxP = c.props?.maxPower !== undefined ? c.props.maxPower : 0.25;
@@ -570,12 +901,19 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'SWITCH', 'TRANSFORMER'].includes(type)) {
+      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {
         const v = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
         isBurned = Math.abs(v) > maxV;
+      } else if (type === 'SEVEN_SEGMENT') {
+        let segmentBurned = false;
+        ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(seg => {
+            const segCurrent = branchCurrentsMap[`${c.id}_${seg}`] || 0;
+            if (Math.abs(segCurrent) > maxI) segmentBurned = true;
+        });
+        isBurned = segmentBurned;
       }
 
       if (isBurned) {
@@ -584,5 +922,15 @@ export function simulateTick({
     }
   });
 
-  return { voltages: nodeVoltagesMap, currents: branchCurrentsMap, wireCurrents: wireCurrentsMap, active: activeMap };
+  return { 
+    voltages: nodeVoltagesMap, 
+    currents: branchCurrentsMap, 
+    wireCurrents: wireCurrentsMap, 
+    active: activeMap, 
+    ramData: prevState.ramData || {}, 
+    ic555: prevState.ic555 || {}, 
+    plcData: prevState.plcData || {},
+    shiftRegisterData: prevState.shiftRegisterData || {},
+    sevenSegmentData: prevState.sevenSegmentData || {}
+  };
 }

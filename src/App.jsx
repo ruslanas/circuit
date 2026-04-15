@@ -36,6 +36,69 @@ const AcSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const OscillatorSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="10" />
+    <path d="M 6 12 Q 9 6 12 12 T 18 12" />
+  </svg>
+);
+
+const OpAmpSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polygon points="4,4 20,12 4,20" fill="transparent" stroke="currentColor" strokeWidth="2" />
+    <line x1="6" y1="8" x2="9" y2="8" />
+    <line x1="7.5" y1="6.5" x2="7.5" y2="9.5" />
+    <line x1="6" y1="16" x2="9" y2="16" />
+  </svg>
+);
+
+const ComparatorSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <polygon points="4,4 20,12 4,20" fill="transparent" stroke="currentColor" strokeWidth="2" />
+    <line x1="6" y1="8" x2="9" y2="8" />
+    <line x1="7.5" y1="6.5" x2="7.5" y2="9.5" />
+    <line x1="6" y1="16" x2="9" y2="16" />
+    <path d="M 11 14 L 11 10 L 15 10" strokeWidth="1.5" />
+    <line x1="9" y1="14" x2="11" y2="14" strokeWidth="1.5" />
+  </svg>
+);
+
+const PlcSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="7" cy="8" r="1" fill="currentColor" stroke="none" />
+    <circle cx="7" cy="16" r="1" fill="currentColor" stroke="none" />
+    <circle cx="17" cy="8" r="1" fill="currentColor" stroke="none" />
+    <circle cx="17" cy="16" r="1" fill="currentColor" stroke="none" />
+    <text x="12" y="14" textAnchor="middle" fontSize="5" fill="currentColor" stroke="none" style={{fontFamily: 'monospace', fontWeight: 'bold'}}>PLC</text>
+  </svg>
+);
+
+const ShiftRegisterSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M7 8h4m-4 8h4m2-4h4" />
+    <path d="M11 8l4 4-4 4" />
+  </svg>
+);
+
+const SevenSegmentSymbol = ({ size, className, style, segments = {} }) => {
+  const segs = {
+    a: { d: "M9 7 H15", on: segments.a }, b: { d: "M16 8 V12", on: segments.b },
+    c: { d: "M16 14 V18", on: segments.c }, d: { d: "M9 19 H11.5", on: segments.d },
+    e: { d: "M8 14 V18", on: segments.e }, f: { d: "M8 8 V12", on: segments.f },
+    g: { d: "M9 13 H15", on: segments.g },
+  };
+  const color = style?.color || 'currentColor';
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+      {Object.values(segs).map((seg, i) => (
+        <path key={i} d={seg.d} stroke={seg.on ? color : 'rgba(128,128,128,0.15)'} strokeWidth={seg.on ? 2 : 1.5} style={seg.on ? { filter: `drop-shadow(0 0 4px ${color})` } : {}} />
+      ))}
+    </svg>
+  );
+};
+
 const PwmSymbol = ({ size, className, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <circle cx="12" cy="12" r="10" />
@@ -89,6 +152,22 @@ const TransformerSymbol = ({ size, className, style }) => (
     <line x1="10" y1="4" x2="10" y2="20" />
     <line x1="14" y1="4" x2="14" y2="20" />
     <path d="M20 2 v4 c-3 0 -3 4 0 4 c-3 0 -3 4 0 4 c-3 0 -3 4 0 4 v4" />
+  </svg>
+);
+
+const Timer555Symbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="5" y="5" width="14" height="14" rx="2" />
+    <path d="M5 8h-2M5 12h-2M5 16h-2M19 8h2M19 12h2M19 16h2M12 5v-2M12 19v2" />
+    <text x="12" y="14" textAnchor="middle" fontSize="6" fill="currentColor" stroke="none" style={{fontFamily: 'monospace', fontWeight: 'bold'}}>555</text>
+  </svg>
+);
+
+const RamSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 8h4M3 12h4M3 16h4M21 12h-4" />
+    <text x="12" y="14" textAnchor="middle" fontSize="5" fill="currentColor" stroke="none" style={{fontFamily: 'monospace'}}>RAM</text>
   </svg>
 );
 
@@ -204,6 +283,12 @@ const COMPONENT_TYPES = {
     terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
     defaultProps: { voltage: 5, frequency: 2, dutyCycle: 50, maxCurrent: 2 }
   },
+  OSCILLATOR: {
+    id: 'OSCILLATOR', name: 'Oscillator', desc: 'Function generator (Sine, Square, Triangle, Saw).',
+    icon: OscillatorSymbol, color: '#00f0ff',
+    terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
+    defaultProps: { waveform: 'SINE', voltage: 5, frequency: 1, offset: 0, maxCurrent: 2 }
+  },
   GROUND: {
     id: 'GROUND', name: 'Ground', desc: '0V reference point for the circuit.',
     icon: GroundSymbol, color: '#39ff14',
@@ -236,6 +321,28 @@ const COMPONENT_TYPES = {
       { x: 80, y: 10, type: 's1' }, { x: 80, y: 50, type: 's2' }
     ],
     defaultProps: { primaryL: 1, secondaryL: 1, coupling: 0.99, maxCurrent: 5 }
+  },
+  TIMER555: {
+    id: 'TIMER555', name: '555 Timer', desc: 'Generates accurate time delays or oscillation.',
+    icon: Timer555Symbol, color: '#b829ea',
+    terminals: [
+      { x: 40, y: 60, type: 'gnd' },  { x: 0, y: 30, type: 'trig' },
+      { x: 80, y: 30, type: 'out' },  { x: 0, y: 15, type: 'rst' },
+      { x: 80, y: 45, type: 'ctrl' }, { x: 0, y: 45, type: 'thr' },
+      { x: 80, y: 15, type: 'dis' },  { x: 40, y: 0, type: 'vcc' }
+    ],
+    defaultProps: { maxVoltage: 18, maxCurrent: 0.2 }
+  },
+  RAM: {
+    id: 'RAM', name: 'RAM (4x1)', desc: '4-bit Random Access Memory (4 words x 1 bit).',
+    icon: RamSymbol, color: '#00f0ff',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 15, type: 'a0' }, { x: 0, y: 30, type: 'a1' },
+      { x: 0, y: 45, type: 'din' }, { x: 20, y: 60, type: 'we' },
+      { x: 80, y: 30, type: 'out' }
+    ],
+    defaultProps: { maxVoltage: 5, maxCurrent: 1 }
   },
   POTENTIOMETER: {
     id: 'POTENTIOMETER', name: 'Potentiometer', desc: 'Adjustable voltage divider.',
@@ -277,6 +384,55 @@ const COMPONENT_TYPES = {
     ],
     defaultProps: { pullupRes: 10000, driveRes: 1000, inRes: 1000, beta: 100, maxCurrent: 2 }
   },
+  OPAMP: {
+    id: 'OPAMP', name: 'Op-Amp', desc: 'Ideal Operational Amplifier.',
+    icon: OpAmpSymbol, color: '#ff003c',
+    terminals: [
+      { x: 0, y: 15, type: 'in+' }, { x: 0, y: 45, type: 'in-' },
+      { x: 80, y: 30, type: 'out' }, { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'vee' }
+    ],
+    defaultProps: { gain: 100000, maxCurrent: 0.05 }
+  },
+  COMPARATOR: {
+    id: 'COMPARATOR', name: 'Comparator', desc: 'Outputs HIGH if in+ > in-, else LOW.',
+    icon: ComparatorSymbol, color: '#ff003c',
+    terminals: [
+      { x: 0, y: 15, type: 'in+' }, { x: 0, y: 45, type: 'in-' },
+      { x: 80, y: 30, type: 'out' }, { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' }
+    ],
+    defaultProps: { maxCurrent: 0.05 }
+  },
+  PLC: {
+    id: 'PLC', name: 'Simple PLC', desc: 'Programmable Logic (2 IN, 2 OUT). Use I0, I1, AND, OR, NOT, XOR.',
+    icon: PlcSymbol, color: '#b829ea',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 15, type: 'in0' }, { x: 0, y: 45, type: 'in1' },
+      { x: 80, y: 15, type: 'out0' }, { x: 80, y: 45, type: 'out1' }
+    ],
+    defaultProps: { maxVoltage: 24, maxCurrent: 1, prog0: 'I0 AND I1', prog1: 'NOT I0' }
+  },
+  SHIFT_REGISTER: {
+    id: 'SHIFT_REGISTER', name: 'Shift Register', desc: '4-bit SIPO (Serial-In, Parallel-Out).',
+    icon: ShiftRegisterSymbol, color: '#ff8c00',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 15, type: 'data' }, { x: 0, y: 45, type: 'clk' },
+      { x: 80, y: 10, type: 'q0' }, { x: 80, y: 23, type: 'q1' },
+      { x: 80, y: 37, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
+    ],
+    defaultProps: { maxVoltage: 18, maxCurrent: 0.05 }
+  },
+  SEVEN_SEGMENT: {
+    id: 'SEVEN_SEGMENT', name: '7-Segment', desc: 'Common cathode 7-segment display.',
+    icon: SevenSegmentSymbol, color: '#ff003c',
+    terminals: [
+      { x: 0, y: 5, type: 'a' }, { x: 0, y: 15, type: 'b' }, { x: 0, y: 25, type: 'c' },
+      { x: 0, y: 35, type: 'd' }, { x: 80, y: 5, type: 'e' }, { x: 80, y: 15, type: 'f' },
+      { x: 80, y: 25, type: 'g' }, { x: 40, y: 60, type: 'gnd' }
+    ],
+    defaultProps: { forwardVoltage: 2.0, maxCurrent: 0.02 }
+  },
   LED: { 
     id: 'LED', name: 'LED', desc: 'Light Emitting Diode. Emits light.',
     icon: LedSymbol, color: '#b829ea', 
@@ -298,10 +454,10 @@ const COMPONENT_TYPES = {
 };
 
 const COMPONENT_GROUPS = {
-  'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'GROUND'],
+  'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH'],
-  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE'],
-  'Outputs': ['LED', 'MOTOR', 'SERVO']
+  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'TIMER555', 'RAM'],
+  'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT']
 };
 
 // Map compound devices to base physical components
@@ -350,20 +506,37 @@ const formatUnit = (val, unit) => {
   return `${sign}${absVal.toFixed(2)} ${unit}`;
 };
 
+const getWirePath = (start, end) => {
+  const dx = Math.abs(end.x - start.x);
+  const dy = Math.abs(end.y - start.y);
+  // If practically aligned, draw straight line
+  if (dx < 5 || dy < 5) return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  const midX = start.x + (end.x - start.x) / 2;
+  return `M ${start.x} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${end.x} ${end.y}`;
+};
+
 const getComponentValueLabel = (comp) => {
   if (!comp || !comp.props) return '';
   if (comp.type === 'BATTERY') return formatUnit(comp.props.voltage, 'V');
   if (comp.type === 'AC_SOURCE') return `${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')}`;
   if (comp.type === 'PWM') return `${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')} ${Number(comp.props.dutyCycle).toFixed(0)}%`;
+  if (comp.type === 'OSCILLATOR') return `${comp.props.waveform} ${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')}`;
   if (comp.type === 'RESISTOR' || comp.type === 'MOTOR') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'CAPACITOR') return formatUnit(comp.props.capacitance, 'F');
   if (comp.type === 'INDUCTOR') return formatUnit(comp.props.inductance, 'H');
+  if (comp.type === 'TIMER555') return 'NE555';
+  if (comp.type === 'RAM') return '4x1 RAM';
   if (comp.type === 'TRANSFORMER') return `${formatUnit(comp.props.primaryL, 'H')}:${formatUnit(comp.props.secondaryL, 'H')}`;
   if (comp.type === 'LED') return `${comp.props.forwardVoltage}V ${comp.props.color}`;
   if (comp.type === 'DIODE') return `${comp.props.forwardVoltage}V`;
   if (comp.type === 'POTENTIOMETER') return `${formatUnit(comp.props.resistance, 'Ω')} (${comp.props.position}%)`;
   if (comp.type === 'NPN' || comp.type === 'PNP') return `β=${comp.props.beta || 100}`;
   if (comp.type === 'GROUND') return '0V';
+  if (comp.type === 'OPAMP') return `A=${comp.props.gain || 100000}`;
+  if (comp.type === 'COMPARATOR') return 'CMP';
+  if (comp.type === 'PLC') return 'PLC';
+  if (comp.type === 'SHIFT_REGISTER') return '4-BIT SIPO';
+  if (comp.type === 'SEVEN_SEGMENT') return '7-SEG';
   return '';
 };
 
@@ -623,6 +796,143 @@ const EXAMPLES = [
         { id: "w6", from: { compId: "res", termIdx: 1 }, to: { compId: "gnd2", termIdx: 0 } }
       ]
     }
+  },
+  {
+    name: "555 Astable Oscillator",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 9, maxCurrent: 2 } },
+        { id: "gnd1", type: "GROUND", x: 60, y: 260, rotation: 0, props: {} },
+        { id: "ic", type: "TIMER555", x: 260, y: 160, rotation: 0, props: {} },
+        { id: "r1", type: "RESISTOR", x: 200, y: 80, rotation: 0, props: { resistance: 1000 } },
+        { id: "r2", type: "RESISTOR", x: 160, y: 160, rotation: 90, props: { resistance: 10000 } },
+        { id: "c1", type: "CAPACITOR", x: 160, y: 260, rotation: 90, props: { capacitance: 0.00001 } },
+        { id: "gnd2", type: "GROUND", x: 160, y: 340, rotation: 0, props: {} },
+        { id: "r_led", type: "RESISTOR", x: 400, y: 190, rotation: 90, props: { resistance: 330 } },
+        { id: "led", type: "LED", x: 400, y: 270, rotation: 90, props: { forwardVoltage: 2, color: "#ff003c" } },
+        { id: "gnd3", type: "GROUND", x: 400, y: 340, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "ic", termIdx: 7 } },
+        { id: "w2", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd1", termIdx: 0 } },
+        { id: "w3", from: { compId: "bat", termIdx: 0 }, to: { compId: "ic", termIdx: 3 } },
+        { id: "w4", from: { compId: "bat", termIdx: 0 }, to: { compId: "r1", termIdx: 0 } },
+        { id: "w5", from: { compId: "r1", termIdx: 1 }, to: { compId: "ic", termIdx: 6 } },
+        { id: "w6", from: { compId: "r1", termIdx: 1 }, to: { compId: "r2", termIdx: 0 } },
+        { id: "w7", from: { compId: "r2", termIdx: 1 }, to: { compId: "ic", termIdx: 5 } },
+        { id: "w8", from: { compId: "ic", termIdx: 5 }, to: { compId: "ic", termIdx: 1 } },
+        { id: "w9", from: { compId: "ic", termIdx: 5 }, to: { compId: "c1", termIdx: 0 } },
+        { id: "w10", from: { compId: "c1", termIdx: 1 }, to: { compId: "gnd2", termIdx: 0 } },
+        { id: "w11", from: { compId: "ic", termIdx: 2 }, to: { compId: "r_led", termIdx: 0 } },
+        { id: "w12", from: { compId: "r_led", termIdx: 1 }, to: { compId: "led", termIdx: 0 } },
+        { id: "w13", from: { compId: "led", termIdx: 1 }, to: { compId: "gnd3", termIdx: 0 } },
+        { id: "w14", from: { compId: "ic", termIdx: 0 }, to: { compId: "gnd1", termIdx: 0 } }
+      ]
+    }
+  },
+  {
+    name: "Op-Amp Oscillator",
+    data: {
+      components: [
+        { id: "op", type: "OPAMP", x: 260, y: 160, rotation: 0, props: { gain: 100000, maxCurrent: 0.05 } },
+        { id: "vcc", type: "BATTERY", x: 260, y: 60, rotation: 0, props: { voltage: 15 } },
+        { id: "vee", type: "BATTERY", x: 260, y: 260, rotation: 180, props: { voltage: 15 } },
+        { id: "gnd1", type: "GROUND", x: 380, y: 60, rotation: 0, props: {} },
+        { id: "gnd2", type: "GROUND", x: 380, y: 260, rotation: 0, props: {} },
+        { id: "r1", type: "RESISTOR", x: 120, y: 100, rotation: 0, props: { resistance: 10000 } },
+        { id: "c1", type: "CAPACITOR", x: 120, y: 200, rotation: 90, props: { capacitance: 0.0001 } },
+        { id: "gnd3", type: "GROUND", x: 120, y: 300, rotation: 0, props: {} },
+        { id: "r2", type: "RESISTOR", x: 120, y: 160, rotation: 0, props: { resistance: 10000 } },
+        { id: "r3", type: "RESISTOR", x: 260, y: 220, rotation: 90, props: { resistance: 10000 } },
+        { id: "gnd4", type: "GROUND", x: 260, y: 300, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "vcc", termIdx: 0 }, to: { compId: "op", termIdx: 3 } },
+        { id: "w2", from: { compId: "vcc", termIdx: 1 }, to: { compId: "gnd1", termIdx: 0 } },
+        { id: "w3", from: { compId: "vee", termIdx: 1 }, to: { compId: "op", termIdx: 4 } },
+        { id: "w4", from: { compId: "vee", termIdx: 0 }, to: { compId: "gnd2", termIdx: 0 } },
+        { id: "w5", from: { compId: "op", termIdx: 2 }, to: { compId: "r1", termIdx: 0 } },
+        { id: "w6", from: { compId: "r1", termIdx: 1 }, to: { compId: "op", termIdx: 1 } },
+        { id: "w7", from: { compId: "r1", termIdx: 1 }, to: { compId: "c1", termIdx: 0 } },
+        { id: "w8", from: { compId: "c1", termIdx: 1 }, to: { compId: "gnd3", termIdx: 0 } },
+        { id: "w9", from: { compId: "op", termIdx: 2 }, to: { compId: "r2", termIdx: 0 } },
+        { id: "w10", from: { compId: "r2", termIdx: 1 }, to: { compId: "op", termIdx: 0 } },
+        { id: "w11", from: { compId: "r2", termIdx: 1 }, to: { compId: "r3", termIdx: 0 } },
+        { id: "w12", from: { compId: "r3", termIdx: 1 }, to: { compId: "gnd4", termIdx: 0 } }
+      ]
+    }
+  },
+  {
+    name: "Shift Register with Clock",
+    data: {
+      components: [
+        { id: "clk", type: "PWM", x: 80, y: 260, rotation: 0, props: { voltage: 5, frequency: 2, dutyCycle: 50 } },
+        { id: "vcc", type: "BATTERY", x: 80, y: 100, rotation: 0, props: { voltage: 5 } },
+        { id: "gnd", type: "GROUND", x: 260, y: 340, rotation: 0, props: {} },
+        { id: "sw_data", type: "SWITCH", x: 80, y: 180, rotation: 0, props: { isOpen: true } },
+        { id: "sr", type: "SHIFT_REGISTER", x: 260, y: 180, rotation: 0, props: {} },
+        { id: "r0", type: "RESISTOR", x: 360, y: 130, rotation: 0, props: { resistance: 330 } },
+        { id: "r1", type: "RESISTOR", x: 360, y: 180, rotation: 0, props: { resistance: 330 } },
+        { id: "r2", type: "RESISTOR", x: 360, y: 230, rotation: 0, props: { resistance: 330 } },
+        { id: "r3", type: "RESISTOR", x: 360, y: 280, rotation: 0, props: { resistance: 330 } },
+        { id: "led0", type: "LED", x: 480, y: 130, rotation: 0, props: { color: "#ff003c" } },
+        { id: "led1", type: "LED", x: 480, y: 180, rotation: 0, props: { color: "#facc15" } },
+        { id: "led2", type: "LED", x: 480, y: 230, rotation: 0, props: { color: "#39ff14" } },
+        { id: "led3", type: "LED", x: 480, y: 280, rotation: 0, props: { color: "#00f0ff" } }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "vcc", termIdx: 0 }, to: { compId: "sr", termIdx: 0 } },
+        { id: "w2", from: { compId: "vcc", termIdx: 0 }, to: { compId: "sw_data", termIdx: 0 } },
+        { id: "w3", from: { compId: "vcc", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w4", from: { compId: "clk", termIdx: 0 }, to: { compId: "sr", termIdx: 3 } },
+        { id: "w5", from: { compId: "clk", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w6", from: { compId: "sw_data", termIdx: 1 }, to: { compId: "sr", termIdx: 2 } },
+        { id: "w7", from: { compId: "sr", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w8", from: { compId: "sr", termIdx: 4 }, to: { compId: "r0", termIdx: 0 } },
+        { id: "w9", from: { compId: "sr", termIdx: 5 }, to: { compId: "r1", termIdx: 0 } },
+        { id: "w10", from: { compId: "sr", termIdx: 6 }, to: { compId: "r2", termIdx: 0 } },
+        { id: "w11", from: { compId: "sr", termIdx: 7 }, to: { compId: "r3", termIdx: 0 } },
+        { id: "w12", from: { compId: "led0", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w13", from: { compId: "led1", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w14", from: { compId: "led2", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w15", from: { compId: "led3", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w16", from: { compId: "r0", termIdx: 1 }, to: { compId: "led0", termIdx: 0 } },
+        { id: "w17", from: { compId: "r1", termIdx: 1 }, to: { compId: "led1", termIdx: 0 } },
+        { id: "w18", from: { compId: "r2", termIdx: 1 }, to: { compId: "led2", termIdx: 0 } },
+        { id: "w19", from: { compId: "r3", termIdx: 1 }, to: { compId: "led3", termIdx: 0 } }
+      ]
+    }
+  },
+  {
+    name: "RAM Memory Cell (4x1)",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 100, rotation: 0, props: { voltage: 5, maxCurrent: 2 } },
+        { id: "gnd1", type: "GROUND", x: 60, y: 200, rotation: 0, props: {} },
+        { id: "sw_a0", type: "SWITCH", x: 100, y: 160, rotation: 0, props: { isOpen: true, maxCurrent: 5 } },
+        { id: "sw_din", type: "SWITCH", x: 100, y: 220, rotation: 0, props: { isOpen: true, maxCurrent: 5 } },
+        { id: "sw_we", type: "SWITCH", x: 100, y: 280, rotation: 0, props: { isOpen: true, maxCurrent: 5 } },
+        { id: "ram", type: "RAM", x: 300, y: 160, rotation: 0, props: { maxVoltage: 5, maxCurrent: 1 } },
+        { id: "led", type: "LED", x: 440, y: 190, rotation: 0, props: { forwardVoltage: 2, color: "#00f0ff", maxCurrent: 0.04 } },
+        { id: "r_led", type: "RESISTOR", x: 540, y: 190, rotation: 90, props: { resistance: 220, maxPower: 0.25 } },
+        { id: "gnd2", type: "GROUND", x: 540, y: 280, rotation: 0, props: {} },
+        { id: "gnd3", type: "GROUND", x: 340, y: 280, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "ram", termIdx: 0 } },
+        { id: "w2", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd1", termIdx: 0 } },
+        { id: "w3", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw_a0", termIdx: 0 } },
+        { id: "w4", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw_din", termIdx: 0 } },
+        { id: "w5", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw_we", termIdx: 0 } },
+        { id: "w6", from: { compId: "sw_a0", termIdx: 1 }, to: { compId: "ram", termIdx: 2 } },
+        { id: "w7", from: { compId: "sw_din", termIdx: 1 }, to: { compId: "ram", termIdx: 4 } },
+        { id: "w8", from: { compId: "sw_we", termIdx: 1 }, to: { compId: "ram", termIdx: 5 } },
+        { id: "w9", from: { compId: "ram", termIdx: 6 }, to: { compId: "led", termIdx: 0 } },
+        { id: "w10", from: { compId: "led", termIdx: 1 }, to: { compId: "r_led", termIdx: 0 } },
+        { id: "w11", from: { compId: "r_led", termIdx: 1 }, to: { compId: "gnd2", termIdx: 0 } },
+        { id: "w12", from: { compId: "ram", termIdx: 1 }, to: { compId: "gnd3", termIdx: 0 } }
+      ]
+    }
   }
 ];
 
@@ -679,7 +989,8 @@ const App = () => {
   
   // physics engine data
   const [tick, setTick] = useState(0);
-  const [simData, setSimData] = useState({ voltages: {}, currents: {}, wireCurrents: {}, active: {} });
+  const [simData, setSimData] = useState({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
+  const [simSpeed, setSimSpeed] = useState(0.05); // 50ms default dt
   const prevState = useRef({ vNodes: {}, branchI: {} });
   const diodeStatesRef = useRef({});
   const burnedStatesRef = useRef({});
@@ -815,7 +1126,7 @@ const App = () => {
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
@@ -845,8 +1156,20 @@ const App = () => {
             val = (simData.voltages[`${comp.id}-1`] || 0) - (simData.voltages[`${comp.id}-2`] || 0);
             unit = 'V';
         }
-        else if (['BATTERY', 'AC_SOURCE', 'PWM', 'CAPACITOR'].includes(comp.type)) {
+        else if (['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'CAPACITOR'].includes(comp.type)) {
             val = (simData.voltages[`${comp.id}-0`] || 0) - (simData.voltages[`${comp.id}-1`] || 0);
+            unit = 'V';
+        }
+        else if (['TIMER555', 'OPAMP', 'COMPARATOR'].includes(comp.type)) {
+            val = simData.voltages[`${comp.id}-2`] || 0;
+            unit = 'V';
+        }
+        else if (comp.type === 'PLC') {
+            val = simData.voltages[`${comp.id}-4`] || 0; // OUT0
+            unit = 'V';
+        }
+        else if (comp.type === 'SHIFT_REGISTER') {
+            val = simData.voltages[`${comp.id}-4`] || 0; // Q0
             unit = 'V';
         }
         else if (comp.type === 'TRANSFORMER') val = simData.currents[`${comp.id}_1`] || 0;
@@ -1212,7 +1535,7 @@ const App = () => {
     setIsPropDialogOpen(false);
     setIsLibraryOpen(false);
     setLoadedExampleTitle(name);
-    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {} });
+    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
     setPast([]);
     setFuture([]);
     prevState.current = { vNodes: {}, branchI: {} };
@@ -1240,7 +1563,7 @@ const App = () => {
       setActiveTerminal(null);
       setConfirmClear(false);
       setLoadedExampleTitle("");
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
@@ -1574,6 +1897,24 @@ const App = () => {
             const pw = per * (duty / 100);
             spice += `V${name} ${n0} ${n1} PULSE(0 ${vol} 0 1n 1n ${pw} ${per})\n`;
         }
+        else if (c.type === 'OSCILLATOR') {
+            const freq = c.props.frequency || 1;
+            const amp = c.props.voltage || 5;
+            const offset = c.props.offset || 0;
+            const wave = c.props.waveform || 'SINE';
+            if (wave === 'SINE') {
+                spice += `V${name} ${n0} ${n1} SINE(${offset} ${amp} ${freq})\n`;
+            } else if (wave === 'SQUARE') {
+                const per = 1 / Math.max(0.001, freq);
+                spice += `V${name} ${n0} ${n1} PULSE(${offset - amp} ${offset + amp} 0 1n 1n ${per/2} ${per})\n`;
+            } else if (wave === 'TRIANGLE') {
+                const per = 1 / Math.max(0.001, freq);
+                spice += `V${name} ${n0} ${n1} PULSE(${offset - amp} ${offset + amp} 0 ${per/2} ${per/2} 1n ${per})\n`;
+            } else if (wave === 'SAW') {
+                const per = 1 / Math.max(0.001, freq);
+                spice += `V${name} ${n0} ${n1} PULSE(${offset - amp} ${offset + amp} 0 ${per} 1n 1n ${per})\n`;
+            }
+        }
         else if (c.type === 'RESISTOR') spice += `R${name} ${n0} ${n1} ${Math.max(1e-3, c.props.resistance !== undefined ? c.props.resistance : 1000)}\n`;
         else if (c.type === 'CAPACITOR') spice += `C${name} ${n0} ${n1} ${Math.max(1e-12, c.props.capacitance !== undefined ? c.props.capacitance : 0.0001)}\n`;
         else if (c.type === 'INDUCTOR') spice += `L${name} ${n0} ${n1} ${Math.max(1e-9, c.props.inductance !== undefined ? c.props.inductance : 0.01)}\n`;
@@ -1617,6 +1958,27 @@ const App = () => {
             spice += `L${name}_P ${n0} ${n1} ${lp}\n`;
             spice += `L${name}_S ${getNetName(c.id, 2)} ${getNetName(c.id, 3)} ${ls}\n`;
             spice += `K${name} L${name}_P L${name}_S ${k}\n`;
+        }
+        else if (c.type === 'TIMER555') {
+            spice += `* 555 Timer component ${name} omitted (macro block required)\n`;
+        }
+        else if (c.type === 'RAM') {
+            spice += `* RAM component ${name} omitted (digital behavioral block)\n`;
+        }
+        else if (c.type === 'OPAMP') {
+            spice += `E${name} ${getNetName(c.id, 2)} 0 ${getNetName(c.id, 0)} ${getNetName(c.id, 1)} ${c.props.gain || 100000}\n`;
+        }
+        else if (c.type === 'COMPARATOR') {
+            spice += `B${name} ${getNetName(c.id, 2)} 0 V=V(${getNetName(c.id, 0)}) > V(${getNetName(c.id, 1)}) ? V(${getNetName(c.id, 3)}) : V(${getNetName(c.id, 4)})\n`;
+        }
+        else if (c.type === 'PLC') {
+            spice += `* PLC component ${name} omitted (digital behavioral block)\n`;
+        }
+        else if (c.type === 'SHIFT_REGISTER') {
+            spice += `* Shift Register component ${name} omitted (digital behavioral block)\n`;
+        }
+        else if (c.type === 'SEVEN_SEGMENT') {
+            spice += `* 7-Segment Display component ${name} omitted (macro block required)\n`;
         }
     });
 
@@ -2069,6 +2431,15 @@ const App = () => {
               className="w-12 md:w-16 accent-cyan-400"
             />
           </div>
+          <div className="flex items-center gap-1.5 px-1.5 border-l border-cyan-500/20">
+            <span className="hidden md:inline text-[9px] font-mono text-cyan-600 cyber-text" title="Simulation Timestep">SPEED</span>
+            <input 
+              type="range" min="0.001" max="0.1" step="0.001" value={simSpeed} 
+              onChange={(e) => setSimSpeed(parseFloat(e.target.value))}
+              className="w-12 md:w-16 accent-cyan-400"
+              title={`Timestep: ${simSpeed}s`}
+            />
+          </div>
           <div className="pl-1.5 border-l border-cyan-500/20 flex items-center gap-1">
              <button 
                onClick={() => setIsSimulating(!isSimulating)}
@@ -2176,6 +2547,7 @@ const App = () => {
                 const isSelected = selectedWireId === wire.id;
                 
                 const isBurnedWire = isSimulating && burnedStatesRef.current[wire.id];
+                const pathString = getWirePath(start, end);
 
                 let strokeColor = isSelected ? "#fff" : "rgba(0, 240, 255, 0.3)";
                 let wireGlow = "none";
@@ -2196,20 +2568,23 @@ const App = () => {
 
                 return (
                   <g key={wire.id} className="cursor-pointer" onPointerDown={(e) => handleWirePointerDown(e, wire.id)}>
-                    <path d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`} stroke="transparent" strokeWidth="20" />
+                    <path d={pathString} stroke="transparent" strokeWidth="20" fill="none" />
                     <path
-                      d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
+                      d={pathString}
                       stroke={strokeColor}
                       strokeWidth={isSelected ? "3" : "2"}
+                      fill="none"
                       strokeLinecap="round"
+                      strokeLinejoin="round"
                       className="transition-colors"
                       filter={wireGlow}
                     />
                     {isActive && !isBurnedWire && Math.abs(current) > 1e-5 && (
                       <path
-                        d={`M ${start.x} ${start.y} L ${end.x} ${end.y}`}
+                        d={pathString}
                         stroke="#ffffff"
                         strokeWidth="2"
+                        fill="none"
                         strokeDasharray="4 6"
                         strokeLinecap="round"
                         className="pointer-events-none opacity-75"
@@ -2262,6 +2637,10 @@ const App = () => {
                 if (comp.type === 'NPN') current = simData.currents[`${comp.id}_CE`] || 0;
                 else if (comp.type === 'PNP') current = simData.currents[`${comp.id}_EC`] || 0;
                 else if (comp.type === 'HBRIDGE') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT1`] || 0), Math.abs(simData.currents[`${comp.id}_OUT2`] || 0));
+                else if (comp.type === 'OPAMP' || comp.type === 'COMPARATOR') current = simData.currents[`${comp.id}_OUT`] || 0;
+                else if (comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT0`] || 0), Math.abs(simData.currents[`${comp.id}_OUT1`] || 0));
+                else if (comp.type === 'SEVEN_SEGMENT') current = simData.currents[comp.id] || 0;
+                else if (comp.type === 'PLC') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT0`] || 0), Math.abs(simData.currents[`${comp.id}_OUT1`] || 0));
                 else current = simData.currents[comp.id] || 0;
                 
                 // Check Damage/Burn Limits
@@ -2311,7 +2690,12 @@ const App = () => {
                       filter={glowFilter}
                     />
                     
-                    <g transform="translate(40, 30)" className="pointer-events-none">
+                    {comp.type === 'SEVEN_SEGMENT' ? (
+                      <g transform="translate(40, 30)" className="pointer-events-none">
+                        <SevenSegmentSymbol size={30} style={{ color: compColor, transform: 'translate(-15px, -15px)' }} segments={simData.sevenSegmentData?.[comp.id]} />
+                      </g>
+                    ) : (
+                      <g transform="translate(40, 30)" className="pointer-events-none">
                       {isLit && !isBurned && (
                         <circle cx="0" cy="0" r="14" fill={compColor} opacity="0.4" style={{ filter: 'blur(4px)' }} />
                       )}
@@ -2327,7 +2711,8 @@ const App = () => {
                       } : { transformOrigin: '0px 0px' }}>
                          <CompIcon size={24} angle={comp.type === 'SERVO' ? servoAngle : undefined} style={{ color: compColor, transform: 'translate(-12px, -12px)', filter: glowFilter }} />
                       </g>
-                    </g>
+                      </g>
+                    )}
 
                     {/* Terminals */}
                     {type.terminals.map((term, idx) => {
@@ -2351,7 +2736,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'SEVEN_SEGMENT') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -2386,7 +2771,7 @@ const App = () => {
                       </text>
                       {isSimulating && simData.active[comp.id] && !isBurned && !['SERVO', 'HBRIDGE'].includes(comp.type) && (
                         <text y="20" textAnchor="middle" fontSize="8" fill={compColor} className="font-mono pointer-events-none cyber-glow">
-                          {['NPN', 'PNP'].includes(comp.type) ? formatUnit(simData.currents[`${comp.id}_${comp.type==='NPN'?'CE':'EC'}`], 'A') : formatUnit(simData.currents[comp.id], 'A')}
+                          {formatUnit(current, 'A')}
                         </text>
                       )}
                       {comp.type === 'MOTOR' && isSimulating && simData.active[comp.id] && !isBurned && (
@@ -2500,6 +2885,20 @@ const App = () => {
                           >
                             {val ? 'TRUE (OPEN)' : 'FALSE (CLOSED)'}
                           </button>
+                        ) : key === 'waveform' ? (
+                          <select 
+                            value={val}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: newVal } } : c));
+                            }}
+                            className="w-full cyber-input rounded-sm p-1.5 text-[10px] bg-[#050507]"
+                          >
+                            <option value="SINE">SINE</option>
+                            <option value="SQUARE">SQUARE</option>
+                            <option value="TRIANGLE">TRIANGLE</option>
+                            <option value="SAW">SAW</option>
+                          </select>
                         ) : key === 'position' ? (
                           <div className="flex items-center gap-2">
                             <input 
@@ -2567,7 +2966,7 @@ const App = () => {
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_ce</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-1`]||0) - (simData.voltages[`${comp.id}-2`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_col</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_CE`], 'A')}</span></div>
                               </>
-                           ) : comp.type === 'PNP' ? (
+                           ) : ['OPAMP', 'COMPARATOR'].includes(comp.type) ? (
                               <>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_eb</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-0`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_ec</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
@@ -2618,8 +3017,48 @@ const App = () => {
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Angle</span> <span className="font-mono text-cyan-300">{Math.round(angle)}°</span></div>
                                 </>
                               );
-                           })() : (
-                              comp.type === 'TRANSFORMER' ? (
+                           })() : comp.type === 'TIMER555' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-7`]||0) - (simData.voltages[`${comp.id}-0`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">OUT state</span> <span className="font-mono text-cyan-300">{simData.ic555?.[comp.id] ? 'HIGH' : 'LOW'}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_out</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
+                                </>
+                              ) : comp.type === 'RAM' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_out</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
+                                  <div className="mt-2 text-[10px] text-cyan-500 font-bold border-t border-cyan-900/50 pt-1">MEMORY STATE</div>
+                                  <div className="grid grid-cols-2 gap-1 mt-1">
+                                    {[0, 1, 2, 3].map(addr => (
+                                      <div key={addr} className="bg-cyan-900/30 px-1 py-0.5 rounded flex justify-between">
+                                        <span className="text-cyan-700">0x{addr}</span>
+                                        <span className="font-mono text-cyan-300">{simData.ramData?.[comp.id]?.[addr] || 0}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </>
+                              ) : comp.type === 'PLC' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">IN0 / IN1</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'} / {((simData.voltages[`${comp.id}-3`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">OUT0 / OUT1</span> <span className="font-mono text-cyan-300">{simData.plcData?.[comp.id]?.out0 ? 'HI' : 'LO'} / {simData.plcData?.[comp.id]?.out1 ? 'HI' : 'LO'}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_out0</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_OUT0`], 'A')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_out1</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_OUT1`], 'A')}</span></div>
+                                </>
+                              ) : comp.type === 'SHIFT_REGISTER' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">CLK</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-3`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">DATA</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">BITS [3-0]</span> <span className="font-mono text-cyan-300">{(simData.shiftRegisterData?.[comp.id]?.bits || [0,0,0,0]).slice().reverse().join('')}</span></div>
+                                </>
+                              ) : comp.type === 'SEVEN_SEGMENT' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_gnd</span> <span className="font-mono text-cyan-300">{formatUnit(simData.voltages[`${comp.id}-7`]||0, 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">ON</span> <span className="font-mono text-cyan-300">{(Object.keys(simData.sevenSegmentData?.[comp.id] || {}).filter(k => simData.sevenSegmentData[comp.id][k]).join('') || '-').toUpperCase()}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_total</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
+                                </>
+                              ) : comp.type === 'TRANSFORMER' ? (
                                 <>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_pri</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_pri</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_1`], 'A')}</span></div>
@@ -2631,7 +3070,6 @@ const App = () => {
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V Drop</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Current</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
                               </>
-                              )
                            )}
                        </div>
                        {renderWaveform()}

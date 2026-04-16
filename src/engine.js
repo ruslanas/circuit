@@ -112,6 +112,7 @@ export function simulateTick({
   if (!prevState.ic555) prevState.ic555 = {};
   if (!prevState.plcData) prevState.plcData = {};
   if (!prevState.shiftRegisterData) prevState.shiftRegisterData = {};
+  if (!prevState.latchData) prevState.latchData = {};
 
   expandedComponents.forEach(vc => {
     if (vc.type === 'RAM') {
@@ -185,6 +186,25 @@ export function simulateTick({
         prevState.shiftRegisterData[vc.id].bits = [vData >= logicHigh ? 1 : 0, ...currentBits.slice(0, 3)];
       }
       prevState.shiftRegisterData[vc.id].lastClk = vClk;
+    } else if (vc.type === 'LATCH') {
+      if (!prevState.latchData[vc.id]) {
+        prevState.latchData[vc.id] = { bits: [0,0,0,0] };
+      }
+      
+      const vGnd = prevState.vNodes[vc.virtualTerminals[1]] || 0;
+      const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - vGnd;
+      const vClk = (prevState.vNodes[vc.virtualTerminals[6]] || 0) - vGnd;
+
+      const logicHigh = vVcc > 2.5 ? vVcc * 0.5 : 2.5;
+
+      if (vClk >= logicHigh) { // Latch is transparent when CLK is high
+        const newBits = [];
+        for (let i = 0; i < 4; i++) {
+          const vD = (prevState.vNodes[vc.virtualTerminals[2 + i]] || 0) - vGnd;
+          newBits.push(vD >= logicHigh ? 1 : 0);
+        }
+        prevState.latchData[vc.id].bits = newBits;
+      }
     }
   });
 
@@ -443,6 +463,25 @@ export function simulateTick({
             const vOutTarget = (bit === 1) ? (vVcc > 0 ? vVcc : 5) : 0;
             vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 50, id: `${vc.id}_OUT${i}` });
         });
+      } else if (vc.type === 'LATCH') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nClk = tNodes[vc.virtualTerminals[6]];
+        
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 10000, id: vc.id + "_VCC" });
+        if(nClk !== undefined && nGnd !== undefined) resistors.push({ n1: nClk, n2: nGnd, R: 1e6, id: vc.id + "_RCLK" });
+
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const bits = prevState.latchData[vc.id]?.bits || [0,0,0,0];
+
+        for (let i = 0; i < 4; i++) {
+            const nD = tNodes[vc.virtualTerminals[2 + i]];
+            if(nD !== undefined && nGnd !== undefined) resistors.push({ n1: nD, n2: nGnd, R: 1e6, id: `${vc.id}_RD${i}` });
+            
+            const nOut = tNodes[vc.virtualTerminals[7 + i]];
+            const vOutTarget = (bits[i] === 1) ? (vVcc > 0 ? vVcc : 5) : 0;
+            vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 50, id: `${vc.id}_OUT${i}` });
+        }
       } else if (vc.type === 'NPN') {
         const state = diodeStates[vc.id];
         const beta = vc.props.beta || 100;
@@ -817,6 +856,16 @@ export function simulateTick({
             }
             branchCurrentsMap[vc.id] = totalCurrent;
             if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'LATCH') {
+            let totalCurrent = 0;
+            for (let i = 0; i < 4; i++) {
+                const vIdx = vSources.findIndex(vs => vs.id === `${vc.id}_OUT${i}`);
+                const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+                branchCurrentsMap[`${vc.id}_OUT${i}`] = iOut;
+                totalCurrent += Math.abs(iOut);
+            }
+            branchCurrentsMap[vc.id] = totalCurrent;
+            if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         } else if (vc.type === 'PLC') {
           const vIdx0 = vSources.findIndex(vs => vs.id === vc.id + "_OUT0");
           const vIdx1 = vSources.findIndex(vs => vs.id === vc.id + "_OUT1");
@@ -881,7 +930,7 @@ export function simulateTick({
       if (type === 'NPN') current = branchCurrentsMap[`${c.id}_CE`] || 0;
       else if (type === 'PNP') current = branchCurrentsMap[`${c.id}_EC`] || 0;
       else if (type === 'HBRIDGE') current = Math.max(Math.abs(branchCurrentsMap[`${c.id}_OUT1`] || 0), Math.abs(branchCurrentsMap[`${c.id}_OUT2`] || 0));
-      else if (type === 'SHIFT_REGISTER') {
+      else if (type === 'SHIFT_REGISTER' || type === 'LATCH') {
         current = 0;
         for(let i=0; i<4; i++) current += Math.abs(branchCurrentsMap[`${c.id}_OUT${i}`] || 0);
       }
@@ -903,7 +952,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER'].includes(type)) {
+      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {
@@ -933,6 +982,7 @@ export function simulateTick({
     ic555: prevState.ic555 || {}, 
     plcData: prevState.plcData || {},
     shiftRegisterData: prevState.shiftRegisterData || {},
+    latchData: prevState.latchData || {},
     sevenSegmentData: prevState.sevenSegmentData || {}
   };
 }

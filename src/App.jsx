@@ -74,6 +74,15 @@ const PlcSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const LatchSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <text x="12" y="14" textAnchor="middle" fontSize="5" fill="currentColor" stroke="none" style={{fontFamily: 'monospace', fontWeight: 'bold'}}>LATCH</text>
+    <path d="M7 8h2M7 16h2" />
+    <path d="M15 8h2M15 16h2" />
+  </svg>
+);
+
 const ShiftRegisterSymbol = ({ size, className, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -440,6 +449,19 @@ const COMPONENT_TYPES = {
     ],
     defaultProps: { maxVoltage: 18, maxCurrent: 0.05 }
   },
+  LATCH: {
+    id: 'LATCH', name: '4-Bit D-Latch', desc: 'Latches 4 data bits when CLK is high.',
+    icon: LatchSymbol, color: '#ff8c00',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 10, type: 'd0' }, { x: 0, y: 23, type: 'd1' },
+      { x: 0, y: 37, type: 'd2' }, { x: 0, y: 50, type: 'd3' },
+      { x: 20, y: 60, type: 'clk' },
+      { x: 80, y: 10, type: 'q0' }, { x: 80, y: 23, type: 'q1' },
+      { x: 80, y: 37, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
+    ],
+    defaultProps: { maxVoltage: 18, maxCurrent: 0.05 }
+  },
   SEVEN_SEGMENT: {
     id: 'SEVEN_SEGMENT', name: '7-Segment', desc: 'Common cathode 7-segment display.',
     icon: SevenSegmentSymbol, color: '#ff003c',
@@ -473,7 +495,7 @@ const COMPONENT_TYPES = {
 const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
-  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'TIMER555', 'RAM'],
+  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM'],
   'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT']
 };
 
@@ -553,6 +575,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'COMPARATOR') return 'CMP';
   if (comp.type === 'PLC') return 'PLC';
   if (comp.type === 'SHIFT_REGISTER') return '4-BIT SIPO';
+  if (comp.type === 'LATCH') return '4-BIT LATCH';
   if (comp.type === 'SEVEN_SEGMENT') return '7-SEG';
   return '';
 };
@@ -1006,7 +1029,7 @@ const App = () => {
   
   // physics engine data
   const [tick, setTick] = useState(0);
-  const [simData, setSimData] = useState({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
+  const [simData, setSimData] = useState({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
   const [simSpeed, setSimSpeed] = useState(0.05); // 50ms default dt
   const prevState = useRef({ vNodes: {}, branchI: {} });
   const diodeStatesRef = useRef({});
@@ -1143,7 +1166,7 @@ const App = () => {
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
@@ -1187,6 +1210,10 @@ const App = () => {
         }
         else if (comp.type === 'SHIFT_REGISTER') {
             val = simData.voltages[`${comp.id}-4`] || 0; // Q0
+            unit = 'V';
+        }
+        else if (comp.type === 'LATCH') {
+            val = simData.voltages[`${comp.id}-7`] || 0; // Q0
             unit = 'V';
         }
         else if (comp.type === 'TRANSFORMER') val = simData.currents[`${comp.id}_1`] || 0;
@@ -1552,7 +1579,7 @@ const App = () => {
     setIsPropDialogOpen(false);
     setIsLibraryOpen(false);
     setLoadedExampleTitle(name);
-    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
+    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
     setPast([]);
     setFuture([]);
     prevState.current = { vNodes: {}, branchI: {} };
@@ -1580,7 +1607,7 @@ const App = () => {
       setActiveTerminal(null);
       setConfirmClear(false);
       setLoadedExampleTitle("");
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, sevenSegmentData: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
@@ -1991,6 +2018,9 @@ const App = () => {
         }
         else if (c.type === 'PLC') {
             spice += `* PLC component ${name} omitted (digital behavioral block)\n`;
+        }
+        else if (c.type === 'LATCH') {
+            spice += `* Latch component ${name} omitted (digital behavioral block)\n`;
         }
         else if (c.type === 'SHIFT_REGISTER') {
             spice += `* Shift Register component ${name} omitted (digital behavioral block)\n`;
@@ -2754,7 +2784,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'SEVEN_SEGMENT') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -3095,6 +3125,29 @@ const App = () => {
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">CLK</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-3`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'}</span></div>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">DATA</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI' : 'LO'}</span></div>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">BITS [3-0]</span> <span className="font-mono text-cyan-300">{(simData.shiftRegisterData?.[comp.id]?.bits || [0,0,0,0]).slice().reverse().join('')}</span></div>
+                                </>
+                              ) : comp.type === 'LATCH' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">CLK</span> <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-6`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? 'HI (Open)' : 'LO (Latched)'}</span></div>
+                                  <div className="mt-2 text-[10px] text-cyan-500 font-bold border-t border-cyan-900/50 pt-1">DATA IN</div>
+                                  <div className="grid grid-cols-2 gap-1 mt-1">
+                                    {[0, 1, 2, 3].map(i => (
+                                      <div key={i} className="bg-cyan-900/30 px-1 py-0.5 rounded flex justify-between">
+                                        <span className="text-cyan-700">D{i}</span>
+                                        <span className="font-mono text-cyan-300">{((simData.voltages[`${comp.id}-${2+i}`]||0) - (simData.voltages[`${comp.id}-1`]||0)) > 2.5 ? '1' : '0'}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="mt-2 text-[10px] text-cyan-500 font-bold border-t border-cyan-900/50 pt-1">LATCHED OUT</div>
+                                  <div className="grid grid-cols-2 gap-1 mt-1">
+                                    {[0, 1, 2, 3].map(i => (
+                                      <div key={i} className="bg-cyan-900/30 px-1 py-0.5 rounded flex justify-between">
+                                        <span className="text-cyan-700">Q{i}</span>
+                                        <span className="font-mono text-cyan-300">{simData.latchData?.[comp.id]?.bits?.[i] || 0}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </>
                               ) : comp.type === 'SEVEN_SEGMENT' ? (
                                 <>

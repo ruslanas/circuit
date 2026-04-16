@@ -293,6 +293,8 @@ export function simulateTick({
         resistors.push({ n1: n2, n2: n1, R: Math.max(1e-3, rBase * (1 - pos)), id: vc.id + '_R2' });
       } else if (vc.type === 'SWITCH') {
         resistors.push({ n1: n0, n2: n1, R: vc.props.isOpen ? 1e9 : 1e-3, id: vc.id });
+      } else if (vc.type === 'PUSH_BUTTON') {
+        resistors.push({ n1: n0, n2: n1, R: vc.props.isPressed ? 1e-3 : 1e9, id: vc.id });
       } else if (vc.type === 'LED' || vc.type === 'DIODE') {
         if (diodeStates[vc.id]) {
           vSources.push({ nPos: n0, nNeg: n1, V: vc.props.forwardVoltage || (vc.type === 'LED' ? 2 : 0.7), Rs: 2.0, id: vc.id });
@@ -901,7 +903,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER'].includes(type)) {
+      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {

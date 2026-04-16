@@ -193,6 +193,17 @@ const SwitchSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const PushButtonSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <line x1="0" y1="12" x2="6" y2="12" />
+    <circle cx="7" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    <line x1="7" y1="8" x2="17" y2="8" />
+    <line x1="12" y1="8" x2="12" y2="2" />
+    <circle cx="17" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    <line x1="18" y1="12" x2="24" y2="12" />
+  </svg>
+);
+
 const NpnSymbol = ({ size, className, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="2" y1="12" x2="8" y2="12" />
@@ -356,6 +367,12 @@ const COMPONENT_TYPES = {
     terminals: [{ x: 0, y: 30 }, { x: 80, y: 30 }],
     defaultProps: { isOpen: true, maxCurrent: 5 }
   },
+  PUSH_BUTTON: { 
+    id: 'PUSH_BUTTON', name: 'Push Button', desc: 'Momentary switch. Closes circuit while pressed.',
+    icon: PushButtonSymbol, color: '#39ff14', 
+    terminals: [{ x: 0, y: 30 }, { x: 80, y: 30 }],
+    defaultProps: { isPressed: false, maxCurrent: 5 }
+  },
   DIODE: { 
     id: 'DIODE', name: 'Diode', desc: 'Allows current to flow in only one direction.',
     icon: DiodeSymbol, color: '#a8a29e', 
@@ -455,7 +472,7 @@ const COMPONENT_TYPES = {
 
 const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'GROUND'],
-  'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH'],
+  'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'TIMER555', 'RAM'],
   'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT']
 };
@@ -1920,6 +1937,7 @@ const App = () => {
         else if (c.type === 'INDUCTOR') spice += `L${name} ${n0} ${n1} ${Math.max(1e-9, c.props.inductance !== undefined ? c.props.inductance : 0.01)}\n`;
         else if (c.type === 'MOTOR') spice += `R${name}_motor ${n0} ${n1} ${Math.max(1e-3, c.props.resistance !== undefined ? c.props.resistance : 10)}\n`;
         else if (c.type === 'SWITCH') spice += `R${name}_sw ${n0} ${n1} ${c.props.isOpen ? '1G' : '0.001'}\n`;
+        else if (c.type === 'PUSH_BUTTON') spice += `R${name}_pb ${n0} ${n1} ${c.props.isPressed ? '0.001' : '1G'}\n`;
         else if (c.type === 'LED') spice += `D${name} ${n0} ${n1} DLED\n`;
         else if (c.type === 'DIODE') spice += `D${name} ${n0} ${n1} DGEN\n`;
         else if (c.type === 'POTENTIOMETER') {
@@ -2762,9 +2780,9 @@ const App = () => {
                     )}
 
                     {/* Static text/UI group (Placed OUTSIDE the footprint and upright) */}
-                    <g transform={`translate(40, ${comp.type === 'POTENTIOMETER' ? 80 : 64}) rotate(${-comp.rotation})`} className="pointer-events-none">
+                    <g transform={`translate(40, ${comp.type === 'POTENTIOMETER' ? 80 : comp.type === 'PUSH_BUTTON' ? 78 : 64}) rotate(${-comp.rotation})`} className="pointer-events-none">
                       <text y="0" textAnchor="middle" fontSize="7" fill={compColor} className="cyber-text">
-                        {type.name} {comp.type === 'SWITCH' ? (comp.props?.isOpen ? '(OPEN)' : '(CLOSED)') : ''}
+                        {type.name} {comp.type === 'SWITCH' ? (comp.props?.isOpen ? '(OPEN)' : '(CLOSED)') : (comp.type === 'PUSH_BUTTON' ? (comp.props?.isPressed ? '(CLOSED)' : '(OPEN)') : '')}
                       </text>
                       <text y="10" textAnchor="middle" fontSize="8" className="fill-cyan-100 font-mono">
                         {getComponentValueLabel(comp)}
@@ -2813,6 +2831,32 @@ const App = () => {
                           className="w-full h-full m-0 cursor-pointer touch-auto accent-cyan-400"
                           title="Adjust Wiper Position"
                         />
+                      </foreignObject>
+                    )}
+
+                    {/* Static Push Button overlay */}
+                    {comp.type === 'PUSH_BUTTON' && (
+                      <foreignObject x="20" y="55" width="40" height="20" transform={`rotate(${-comp.rotation}, 40, 30)`} className="pointer-events-auto">
+                        <button
+                          onPointerDown={(e) => {
+                            e.stopPropagation();
+                            if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+                            setComponents(prev => prev.map(c => c.id === comp.id ? { ...c, props: { ...c.props, isPressed: true } } : c));
+                          }}
+                          onPointerUp={(e) => {
+                            e.stopPropagation();
+                            if (e.target.releasePointerCapture) try { e.target.releasePointerCapture(e.pointerId); } catch(err){}
+                            setComponents(prev => prev.map(c => c.id === comp.id ? { ...c, props: { ...c.props, isPressed: false } } : c));
+                          }}
+                          onPointerCancel={(e) => {
+                            e.stopPropagation();
+                            setComponents(prev => prev.map(c => c.id === comp.id ? { ...c, props: { ...c.props, isPressed: false } } : c));
+                          }}
+                          className={`w-full h-full m-0 cursor-pointer touch-none border rounded text-[10px] font-bold transition-colors ${comp.props.isPressed ? 'bg-cyan-500 text-black border-cyan-300' : 'bg-cyan-900/50 text-cyan-100 border-cyan-500 hover:bg-cyan-700/50'}`}
+                          title="Press and hold"
+                        >
+                          PUSH
+                        </button>
                       </foreignObject>
                     )}
                   </g>
@@ -2883,7 +2927,7 @@ const App = () => {
                             }}
                             className={`w-full py-1.5 rounded-sm text-[10px] font-medium transition-colors border ${val ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700/50' : 'bg-black text-cyan-700 border-cyan-900/50'}`}
                           >
-                            {val ? 'TRUE (OPEN)' : 'FALSE (CLOSED)'}
+                          {val ? (key === 'isPressed' ? 'TRUE (PRESSED)' : 'TRUE (OPEN)') : (key === 'isPressed' ? 'FALSE (RELEASED)' : 'FALSE (CLOSED)')}
                           </button>
                         ) : key === 'waveform' ? (
                           <select 

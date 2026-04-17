@@ -1262,8 +1262,8 @@ const App = () => {
       const customComps = type.components.map(c => ({
         ...c,
         id: `${newIdPrefix}-${c.id}`,
-        x: snapToGrid(150 - pan.x) + c.x,
-        y: snapToGrid(150 - pan.y) + c.y,
+        x: snapToGrid(150 / zoom - pan.x) + c.x,
+        y: snapToGrid(150 / zoom - pan.y) + c.y,
       }));
       const customWires = type.wires.map(w => ({
         ...w,
@@ -1283,8 +1283,8 @@ const App = () => {
     const newComp = {
       id: crypto.randomUUID(),
       type: typeKey,
-      x: snapToGrid(150 - pan.x),
-      y: snapToGrid(150 - pan.y),
+      x: snapToGrid(150 / zoom - pan.x),
+      y: snapToGrid(150 / zoom - pan.y),
       rotation: 0,
       props: { ...type.defaultProps }
     };
@@ -1306,8 +1306,8 @@ const App = () => {
       if (!CTM) return;
       const svgX = (e.clientX - CTM.e) / CTM.a;
       const svgY = (e.clientY - CTM.f) / CTM.d;
-      const dropX = (svgX - pan.x) / zoom;
-      const dropY = (svgY - pan.y) / zoom;
+      const dropX = svgX / zoom - pan.x;
+      const dropY = svgY / zoom - pan.y;
 
       pushStateToHistory(components, wires);
 
@@ -1495,8 +1495,8 @@ const App = () => {
       const CTM = svgRef.current.getScreenCTM();
       if (CTM) {
         setMousePos({
-          x: ((e.clientX - CTM.e) / CTM.a - pan.x) / zoom,
-          y: ((e.clientY - CTM.f) / CTM.d - pan.y) / zoom
+          x: (e.clientX - CTM.e) / (CTM.a * zoom) - pan.x,
+          y: (e.clientY - CTM.f) / (CTM.d * zoom) - pan.y
         });
       }
     }

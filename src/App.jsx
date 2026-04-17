@@ -1623,12 +1623,16 @@ const App = () => {
   };
 
   const handleExport = () => {
+    let fileName = prompt("Enter file name for JSON export:", "circuit-design.json");
+    if (!fileName) return;
+    if (!fileName.toLowerCase().endsWith('.json')) fileName += '.json';
+
     const json = JSON.stringify({ components, wires }, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const href = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = href;
-    link.download = "circuit-design.json";
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -2038,12 +2042,16 @@ const App = () => {
   };
 
   const handleSpiceExport = () => {
+    let fileName = prompt("Enter file name for SPICE export:", "circuit.cir");
+    if (!fileName) return;
+    if (!fileName.toLowerCase().endsWith('.cir')) fileName += '.cir';
+
     const spiceNetlist = generateSpiceNetlist();
     const blob = new Blob([spiceNetlist], { type: "text/plain" });
     const href = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = href;
-    link.download = "circuit.cir";
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -3310,12 +3318,18 @@ const App = () => {
               <div className="flex gap-2">
                 <button onClick={() => { navigator.clipboard.writeText(spiceViewerCode); }} className="px-3 py-1 cyber-button rounded-sm text-[10px] font-bold uppercase tracking-wider">Copy</button>
                 <button onClick={() => {
+                  let fileName = prompt("Enter file name for SPICE export:", "circuit.cir");
+                  if (!fileName) return;
+                  if (!fileName.toLowerCase().endsWith('.cir')) fileName += '.cir';
+
                   const blob = new Blob([spiceViewerCode], { type: "text/plain" });
                   const href = URL.createObjectURL(blob);
                   const link = document.createElement('a');
                   link.href = href;
-                  link.download = "circuit.cir";
+                  link.download = fileName;
+                  document.body.appendChild(link);
                   link.click();
+                  document.body.removeChild(link);
                   URL.revokeObjectURL(href);
                 }} className="px-3 py-1 cyber-button rounded-sm text-[10px] font-bold uppercase tracking-wider">Download</button>
                 <button onClick={() => setSpiceViewerCode(null)} className="p-1.5 cyber-button cyber-button-danger rounded-sm">✕</button>

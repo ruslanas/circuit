@@ -2814,26 +2814,26 @@ const App = () => {
                       </g>
                     )}
 
-                    {/* Static text/UI group (Placed OUTSIDE the footprint and upright) */}
-                    <g transform={`translate(40, ${comp.type === 'POTENTIOMETER' ? 80 : comp.type === 'PUSH_BUTTON' ? 78 : 64}) rotate(${-comp.rotation})`} className="pointer-events-none">
-                      <text y="0" textAnchor="middle" fontSize="7" fill={compColor} className="cyber-text">
+                    {/* Static text/UI group (Placed OUTSIDE the footprint) */}
+                    <g transform={`translate(40, ${comp.type === 'POTENTIOMETER' ? 80 : comp.type === 'PUSH_BUTTON' ? 78 : 64})`} className="pointer-events-none">
+                      <text y="0" textAnchor="middle" fontSize="5" fill={compColor} className="cyber-text">
                         {type.name} {comp.type === 'SWITCH' ? (comp.props?.isOpen ? '(OPEN)' : '(CLOSED)') : (comp.type === 'PUSH_BUTTON' ? (comp.props?.isPressed ? '(CLOSED)' : '(OPEN)') : '')}
                       </text>
-                      <text y="10" textAnchor="middle" fontSize="8" className="fill-cyan-100 font-mono">
+                      <text y="8" textAnchor="middle" fontSize="6" className="fill-cyan-100 font-mono">
                         {getComponentValueLabel(comp)}
                       </text>
                       {isSimulating && simData.active[comp.id] && !isBurned && !['SERVO', 'HBRIDGE'].includes(comp.type) && (
-                        <text y="20" textAnchor="middle" fontSize="8" fill={compColor} className="font-mono pointer-events-none cyber-glow">
+                        <text y="16" textAnchor="middle" fontSize="6" fill={compColor} className="font-mono pointer-events-none cyber-glow">
                           {formatUnit(current, 'A')}
                         </text>
                       )}
                       {comp.type === 'MOTOR' && isSimulating && simData.active[comp.id] && !isBurned && (
-                        <text y="30" textAnchor="middle" fontSize="8" fill={compColor} className="font-mono pointer-events-none cyber-glow">
+                        <text y="24" textAnchor="middle" fontSize="6" fill={compColor} className="font-mono pointer-events-none cyber-glow">
                           {rpm} RPM
                         </text>
                       )}
                       {comp.type === 'SERVO' && isSimulating && !isBurned && (
-                        <text y="30" textAnchor="middle" fontSize="8" fill={compColor} className="font-mono pointer-events-none cyber-glow">
+                        <text y="24" textAnchor="middle" fontSize="6" fill={compColor} className="font-mono pointer-events-none cyber-glow">
                           {Math.round(servoAngle)}°
                         </text>
                       )}

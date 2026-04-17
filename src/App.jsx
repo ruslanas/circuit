@@ -94,7 +94,7 @@ const ShiftRegisterSymbol = ({ size, className, style }) => (
 const SevenSegmentSymbol = ({ size, className, style, segments = {} }) => {
   const segs = {
     a: { d: "M9 7 H15", on: segments.a }, b: { d: "M16 8 V12", on: segments.b },
-    c: { d: "M16 14 V18", on: segments.c }, d: { d: "M9 19 H11.5", on: segments.d },
+    c: { d: "M16 14 V18", on: segments.c }, d: { d: "M9 19 H15", on: segments.d },
     e: { d: "M8 14 V18", on: segments.e }, f: { d: "M8 8 V12", on: segments.f },
     g: { d: "M9 13 H15", on: segments.g },
   };
@@ -466,9 +466,9 @@ const COMPONENT_TYPES = {
     id: 'SEVEN_SEGMENT', name: '7-Segment', desc: 'Common cathode 7-segment display.',
     icon: SevenSegmentSymbol, color: '#ff003c',
     terminals: [
-      { x: 0, y: 5, type: 'a' }, { x: 0, y: 15, type: 'b' }, { x: 0, y: 25, type: 'c' },
-      { x: 0, y: 35, type: 'd' }, { x: 80, y: 5, type: 'e' }, { x: 80, y: 15, type: 'f' },
-      { x: 80, y: 25, type: 'g' }, { x: 40, y: 60, type: 'gnd' }
+      { x: 0, y: 15, type: 'a' }, { x: 0, y: 25, type: 'b' }, { x: 0, y: 35, type: 'c' },
+      { x: 0, y: 45, type: 'd' }, { x: 80, y: 20, type: 'e' }, { x: 80, y: 30, type: 'f' },
+      { x: 80, y: 40, type: 'g' }, { x: 40, y: 60, type: 'gnd' }
     ],
     defaultProps: { forwardVoltage: 2.0, maxCurrent: 0.02 }
   },
@@ -2766,7 +2766,10 @@ const App = () => {
                     {type.terminals.map((term, idx) => {
                       const isActive = activeTerminal?.compId === comp.id && activeTerminal?.termIdx === idx;
                       const labelX = term.x + (term.x < 40 ? 8 : (term.x > 40 ? -8 : 0));
-                      const labelY = term.y + (term.y < 30 ? 10 : (term.y > 30 ? -4 : 3));
+                      let labelY = term.y + 2;
+                      if (term.x > 0 && term.x < 80) {
+                        labelY = term.y + (term.y < 30 ? 8 : -3);
+                      }
                       
                       return (
                         <g key={idx}>

@@ -2795,6 +2795,8 @@ const App = () => {
                                fontSize="6" fill="rgba(0, 240, 255, 0.6)" 
                                textAnchor={term.x === 40 ? "middle" : (term.x < 40 ? "start" : "end")} 
                                className="pointer-events-none font-bold uppercase"
+                               stroke="#050507" strokeWidth="3" strokeLinejoin="round"
+                               style={{ paintOrder: 'stroke' }}
                              >
                                {['NPN', 'PNP'].includes(comp.type) ? term.type.charAt(0) : term.type}
                              </text>

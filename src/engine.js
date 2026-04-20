@@ -113,6 +113,7 @@ export function simulateTick({
   if (!prevState.plcData) prevState.plcData = {};
   if (!prevState.shiftRegisterData) prevState.shiftRegisterData = {};
   if (!prevState.latchData) prevState.latchData = {};
+  if (!prevState.motorAngles) prevState.motorAngles = {};
 
   expandedComponents.forEach(vc => {
     if (vc.type === 'RAM') {
@@ -973,6 +974,20 @@ export function simulateTick({
     }
   });
 
+  validComponents.forEach(c => {
+    if (c.type === 'MOTOR') {
+       if (prevState.motorAngles[c.id] === undefined) prevState.motorAngles[c.id] = 0;
+       const current = branchCurrentsMap[c.id] || 0;
+       if (Math.abs(current) > 1e-3 && !burnedStates[c.id]) {
+           const motorSpeed = Math.max(0.2, 1 / Math.max(0.01, Math.abs(current)));
+           const rpm = 60 / motorSpeed;
+           const dir = current < 0 ? -1 : 1;
+           prevState.motorAngles[c.id] = (prevState.motorAngles[c.id] + dir * rpm * 6 * dt) % 360;
+           if (prevState.motorAngles[c.id] < 0) prevState.motorAngles[c.id] += 360;
+       }
+    }
+  });
+
   return { 
     voltages: nodeVoltagesMap, 
     currents: branchCurrentsMap, 
@@ -983,6 +998,7 @@ export function simulateTick({
     plcData: prevState.plcData || {},
     shiftRegisterData: prevState.shiftRegisterData || {},
     latchData: prevState.latchData || {},
-    sevenSegmentData: prevState.sevenSegmentData || {}
+    sevenSegmentData: prevState.sevenSegmentData || {},
+    motorAngles: prevState.motorAngles || {}
   };
 }

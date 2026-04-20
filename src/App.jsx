@@ -21,9 +21,11 @@ import {
   ChevronRight,
   HelpCircle,
   Undo,
-  Redo
+  Redo,
+  Box
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
+import Robot3DView from './Robot3DView.jsx';
 
 // --- Constants & Types ---
 const GRID_SIZE = 20;
@@ -429,7 +431,19 @@ const COMPONENT_TYPES = {
     defaultProps: { maxCurrent: 0.05 }
   },
   PLC: {
-    id: 'PLC', name: 'Simple PLC', desc: 'Programmable Logic (2 IN, 2 OUT). Use I0, I1, AND, OR, NOT, XOR.',
+    id: 'PLC', name: 'Simple PLC', desc: `Programmable Logic Controller (2 IN, 2 OUT).
+
+PINS:
+- VCC / GND: Power supply
+- IN0 / IN1: Digital inputs (> 2.5V is HIGH)
+- OUT0 / OUT1: Digital outputs (Outputs VCC when HIGH)
+
+PROGRAMMING MANUAL:
+Edit 'prog0' and 'prog1' in properties to set the logic for OUT0 and OUT1.
+- Variables: I0, I1
+- Operators: AND, OR, NOT, XOR
+- Grouping: ( )
+Example: (I0 AND NOT I1) OR I1`,
     icon: PlcSymbol, color: '#b829ea',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
@@ -973,6 +987,44 @@ const EXAMPLES = [
         { id: "w12", from: { compId: "ram", termIdx: 1 }, to: { compId: "gnd3", termIdx: 0 } }
       ]
     }
+  },
+  {
+    name: "3D Robot Arm Linkage",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 220, rotation: 0, props: { voltage: 5 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 300, rotation: 0, props: {} },
+        { id: "pot1", type: "POTENTIOMETER", x: 200, y: 100, rotation: 0, props: { resistance: 10000, position: 50 } },
+        { id: "pot2", type: "POTENTIOMETER", x: 200, y: 220, rotation: 0, props: { resistance: 10000, position: 30 } },
+        { id: "pot3", type: "POTENTIOMETER", x: 200, y: 340, rotation: 0, props: { resistance: 10000, position: 70 } },
+        { id: "srv1", type: "SERVO", x: 400, y: 100, rotation: 0, props: {} },
+        { id: "srv2", type: "SERVO", x: 400, y: 220, rotation: 0, props: {} },
+        { id: "srv3", type: "SERVO", x: 400, y: 340, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w_vcc1", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot1", termIdx: 0 } },
+        { id: "w_vcc2", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot2", termIdx: 0 } },
+        { id: "w_vcc3", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot3", termIdx: 0 } },
+        { id: "w_vcc4", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv1", termIdx: 0 } },
+        { id: "w_vcc5", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv2", termIdx: 0 } },
+        { id: "w_vcc6", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv3", termIdx: 0 } },
+        { id: "w_gnd_bat", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w_gnd1", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot1", termIdx: 1 } },
+        { id: "w_gnd2", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot2", termIdx: 1 } },
+        { id: "w_gnd3", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot3", termIdx: 1 } },
+        { id: "w_gnd4", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv1", termIdx: 2 } },
+        { id: "w_gnd5", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv2", termIdx: 2 } },
+        { id: "w_gnd6", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv3", termIdx: 2 } },
+        { id: "w_sig1", from: { compId: "pot1", termIdx: 2 }, to: { compId: "srv1", termIdx: 1 } },
+        { id: "w_sig2", from: { compId: "pot2", termIdx: 2 }, to: { compId: "srv2", termIdx: 1 } },
+        { id: "w_sig3", from: { compId: "pot3", termIdx: 2 }, to: { compId: "srv3", termIdx: 1 } }
+      ],
+      servoConfig: {
+        "srv1": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null },
+        "srv2": { axis: "Z", offsetX: 0, offsetY: 1, offsetZ: 0, parentId: "srv1" },
+        "srv3": { axis: "Z", offsetX: 2.5, offsetY: 0, offsetZ: 0, parentId: "srv2" }
+      }
+    }
   }
 ];
 
@@ -1010,6 +1062,13 @@ const App = () => {
     } catch (e) { return {}; }
   });
 
+  const [servoConfig, setServoConfig] = useState(() => {
+    try {
+      const saved = localStorage.getItem('circuit_servo_config');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) { return {}; }
+  });
+
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectedWireId, setSelectedWireId] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -1021,6 +1080,7 @@ const App = () => {
   const [spiceViewerCode, setSpiceViewerCode] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [showHelp, setShowHelp] = useState(false);
+  const [viewMode, setViewMode] = useState('2D'); // '2D' | '3D'
   const lastClickRef = useRef({ id: null, time: 0 });
 
   const [past, setPast] = useState([]);
@@ -1069,8 +1129,9 @@ const App = () => {
       localStorage.setItem('circuit_pan', JSON.stringify(pan));
       localStorage.setItem('circuit_zoom', zoom.toString());
       localStorage.setItem('circuit_custom_components', JSON.stringify(customComponents));
+      localStorage.setItem('circuit_servo_config', JSON.stringify(servoConfig));
     } catch (e) { console.warn("Failed to save state to localStorage", e); }
-  }, [components, wires, pan, zoom, customComponents]);
+  }, [components, wires, pan, zoom, customComponents, servoConfig]);
 
   // --- Undo / Redo ---
   const pushStateToHistory = (comps, wrs) => {
@@ -1166,7 +1227,7 @@ const App = () => {
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {}, motorAngles: {} });
     }
     return () => clearInterval(interval);
   }, [isSimulating]);
@@ -1574,12 +1635,13 @@ const App = () => {
     setWires(data.wires.map(w => ({ ...w, props: { maxCurrent: 5, ...(w.props || {}) } })));
     setPan({x: 0, y: 0});
     setZoom(1);
+    setServoConfig(data.servoConfig || {});
     setSelectedIds([]);
     setSelectedWireId(null);
     setIsPropDialogOpen(false);
     setIsLibraryOpen(false);
     setLoadedExampleTitle(name);
-    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
+    setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {}, motorAngles: {} });
     setPast([]);
     setFuture([]);
     prevState.current = { vNodes: {}, branchI: {} };
@@ -1602,12 +1664,13 @@ const App = () => {
       setWires([]);
       setPan({ x: 0, y: 0 });
       setZoom(1);
+      setServoConfig({});
       setSelectedIds([]);
       setSelectedWireId(null);
       setActiveTerminal(null);
       setConfirmClear(false);
       setLoadedExampleTitle("");
-      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {} });
+      setSimData({ voltages: {}, currents: {}, wireCurrents: {}, active: {}, ramData: {}, ic555: {}, plcData: {}, shiftRegisterData: {}, latchData: {}, sevenSegmentData: {}, motorAngles: {} });
       prevState.current = { vNodes: {}, branchI: {} };
       diodeStatesRef.current = {};
       burnedStatesRef.current = {};
@@ -1616,6 +1679,7 @@ const App = () => {
       localStorage.removeItem('circuit_wires');
       localStorage.removeItem('circuit_pan');
       localStorage.removeItem('circuit_zoom');
+      localStorage.removeItem('circuit_servo_config');
     } else {
       setConfirmClear(true);
       setTimeout(() => setConfirmClear(false), 3000); 
@@ -1623,7 +1687,7 @@ const App = () => {
   };
 
   const handleExport = () => {
-    const json = JSON.stringify({ components, wires }, null, 2);
+    const json = JSON.stringify({ components, wires, servoConfig }, null, 2);
     const blob = new Blob([json], { type: "application/json" });
     const href = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -2257,6 +2321,30 @@ const App = () => {
     );
   };
 
+  // Compute servo angles for the 3D View
+  const servoAngles = {};
+  if (viewMode === '3D') {
+    components.filter(c => c.type === 'SERVO').forEach(comp => {
+      let angle = 0;
+      if (isSimulating) {
+        let overrideDuty = null;
+        const sigWire = wires.find(w => 
+          (w.to.compId === comp.id && w.to.termIdx === 1) ||
+          (w.from.compId === comp.id && w.from.termIdx === 1)
+        );
+        if (sigWire) {
+          const sourceId = sigWire.from.compId === comp.id ? sigWire.to.compId : sigWire.from.compId;
+          const sourceComp = components.find(c => c.id === sourceId);
+          if (sourceComp && sourceComp.type === 'PWM') {
+            overrideDuty = sourceComp.props.dutyCycle !== undefined ? sourceComp.props.dutyCycle : 50;
+          }
+        }
+        angle = overrideDuty !== null ? (overrideDuty / 100) * 180 : Math.min(180, Math.max(0, (((simData.voltages[`${comp.id}-1`] || 0) - (simData.voltages[`${comp.id}-2`] || 0)) / 5) * 180));
+      }
+      servoAngles[comp.id] = angle;
+    });
+  }
+
   return (
     <div className="flex flex-col md:flex-row h-screen w-full overflow-hidden relative" style={{ backgroundColor: '#050507', color: '#00f0ff' }}>
       <style>{`
@@ -2489,6 +2577,9 @@ const App = () => {
             />
           </div>
           <div className="pl-1.5 border-l border-cyan-500/20 flex items-center gap-1">
+             <button onClick={() => setViewMode(v => v === '2D' ? '3D' : '2D')} className={`p-1.5 rounded-sm ${viewMode === '3D' ? 'cyber-button bg-cyan-500/20' : 'cyber-button'}`} title="3D Robot View">
+               <Box size={14} />
+             </button>
              <button 
                onClick={() => setIsSimulating(!isSimulating)}
                className={`flex items-center justify-center gap-1 px-2.5 py-1 rounded-sm cyber-text text-[10px] whitespace-nowrap ${
@@ -2550,6 +2641,7 @@ const App = () => {
         </div>
 
         {/* Canvas Area */}
+        {viewMode === '2D' ? (
         <div 
           className="flex-1 overflow-hidden cursor-crosshair relative touch-none" 
           onPointerDown={handlePointerDown}
@@ -2900,6 +2992,16 @@ const App = () => {
             </g>
           </svg>
         </div>
+        ) : (
+          <div className="flex-1 flex overflow-hidden relative">
+            <Robot3DView 
+              servos={components.filter(c => c.type === 'SERVO')}
+              servoAngles={servoAngles}
+              servoConfig={servoConfig}
+              setServoConfig={setServoConfig}
+            />
+          </div>
+        )}
 
         {/* Footer Info */}
         <div className="hidden md:flex cyber-panel border-x-0 border-b-0 border-t p-1 px-3 justify-between items-center text-[9px] font-mono text-cyan-600/70 uppercase tracking-widest z-10 cyber-text">
@@ -2946,7 +3048,7 @@ const App = () => {
                     </div>
                     <div>
                         <span className="font-bold text-cyan-100 text-xs block cyber-text">{typeInfo.name}</span>
-                        <p className="text-[8px] text-cyan-600/70 mt-0.5 leading-tight tracking-wide">{typeInfo.desc}</p>
+                        <p className="text-[8px] text-cyan-600/70 mt-0.5 leading-tight tracking-wide whitespace-pre-wrap">{typeInfo.desc}</p>
                     </div>
                   </div>
 
@@ -3075,6 +3177,7 @@ const App = () => {
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V Drop</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Current</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Speed</span> <span className="font-mono text-cyan-300">{Math.round(60 / Math.max(0.2, 1 / Math.max(0.01, Math.abs(simData.currents[comp.id] || 0))))} RPM</span></div>
+                                <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Position</span> <span className="font-mono text-cyan-300">{Math.round(simData.motorAngles?.[comp.id] || 0)}°</span></div>
                               </>
                            ) : comp.type === 'SERVO' ? (() => {
                               let angle = Math.min(180, Math.max(0, (((simData.voltages[`${comp.id}-1`] || 0) - (simData.voltages[`${comp.id}-2`] || 0)) / 5) * 180));

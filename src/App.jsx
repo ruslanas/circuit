@@ -28,7 +28,7 @@ import { simulateTick } from './engine.js';
 import Robot3DView from './Robot3DView.jsx';
 
 // --- Constants & Types ---
-const GRID_SIZE = 20;
+const GRID_SIZE = 10;
 
 // Custom SVG icons for standard electrical symbols
 const AcSymbol = ({ size, className, style }) => (
@@ -339,8 +339,8 @@ const COMPONENT_TYPES = {
     id: 'TRANSFORMER', name: 'Transformer', desc: 'Coupled inductors for stepping AC voltage up/down.',
     icon: TransformerSymbol, color: '#facc15',
     terminals: [
-      { x: 0, y: 10, type: 'p1' }, { x: 0, y: 50, type: 'p2' },
-      { x: 80, y: 10, type: 's1' }, { x: 80, y: 50, type: 's2' }
+      { x: 0, y: 20, type: 'p1' }, { x: 0, y: 40, type: 'p2' },
+      { x: 80, y: 20, type: 's1' }, { x: 80, y: 40, type: 's2' }
     ],
     defaultProps: { primaryL: 1, secondaryL: 1, coupling: 0.99, maxCurrent: 5 }
   },
@@ -349,9 +349,9 @@ const COMPONENT_TYPES = {
     icon: Timer555Symbol, color: '#b829ea',
     terminals: [
       { x: 40, y: 60, type: 'gnd' },  { x: 0, y: 30, type: 'trig' },
-      { x: 80, y: 30, type: 'out' },  { x: 0, y: 15, type: 'rst' },
-      { x: 80, y: 45, type: 'ctrl' }, { x: 0, y: 45, type: 'thr' },
-      { x: 80, y: 15, type: 'dis' },  { x: 40, y: 0, type: 'vcc' }
+      { x: 80, y: 30, type: 'out' },  { x: 0, y: 20, type: 'rst' },
+      { x: 80, y: 40, type: 'ctrl' }, { x: 0, y: 40, type: 'thr' },
+      { x: 80, y: 20, type: 'dis' },  { x: 40, y: 0, type: 'vcc' }
     ],
     defaultProps: { maxVoltage: 18, maxCurrent: 0.2 }
   },
@@ -360,8 +360,8 @@ const COMPONENT_TYPES = {
     icon: RamSymbol, color: '#00f0ff',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
-      { x: 0, y: 15, type: 'a0' }, { x: 0, y: 30, type: 'a1' },
-      { x: 0, y: 45, type: 'din' }, { x: 20, y: 60, type: 'we' },
+      { x: 0, y: 20, type: 'a0' }, { x: 0, y: 30, type: 'a1' },
+      { x: 0, y: 40, type: 'din' }, { x: 20, y: 60, type: 'we' },
       { x: 80, y: 30, type: 'out' }
     ],
     defaultProps: { maxVoltage: 5, maxCurrent: 1 }
@@ -407,8 +407,8 @@ const COMPONENT_TYPES = {
     icon: HBridgeSymbol, color: '#b829ea',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
-      { x: 0, y: 15, type: 'in1' }, { x: 0, y: 45, type: 'in2' },
-      { x: 80, y: 15, type: 'out1' }, { x: 80, y: 45, type: 'out2' }
+      { x: 0, y: 20, type: 'in1' }, { x: 0, y: 40, type: 'in2' },
+      { x: 80, y: 20, type: 'out1' }, { x: 80, y: 40, type: 'out2' }
     ],
     defaultProps: { pullupRes: 10000, driveRes: 1000, inRes: 1000, beta: 100, maxCurrent: 2 }
   },
@@ -416,7 +416,7 @@ const COMPONENT_TYPES = {
     id: 'OPAMP', name: 'Op-Amp', desc: 'Ideal Operational Amplifier.',
     icon: OpAmpSymbol, color: '#ff003c',
     terminals: [
-      { x: 0, y: 15, type: 'in+' }, { x: 0, y: 45, type: 'in-' },
+      { x: 0, y: 20, type: 'in+' }, { x: 0, y: 40, type: 'in-' },
       { x: 80, y: 30, type: 'out' }, { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'vee' }
     ],
     defaultProps: { gain: 100000, maxCurrent: 0.05 }
@@ -425,7 +425,7 @@ const COMPONENT_TYPES = {
     id: 'COMPARATOR', name: 'Comparator', desc: 'Outputs HIGH if in+ > in-, else LOW.',
     icon: ComparatorSymbol, color: '#ff003c',
     terminals: [
-      { x: 0, y: 15, type: 'in+' }, { x: 0, y: 45, type: 'in-' },
+      { x: 0, y: 20, type: 'in+' }, { x: 0, y: 40, type: 'in-' },
       { x: 80, y: 30, type: 'out' }, { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' }
     ],
     defaultProps: { maxCurrent: 0.05 }
@@ -447,8 +447,8 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: PlcSymbol, color: '#b829ea',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
-      { x: 0, y: 15, type: 'in0' }, { x: 0, y: 45, type: 'in1' },
-      { x: 80, y: 15, type: 'out0' }, { x: 80, y: 45, type: 'out1' }
+      { x: 0, y: 20, type: 'in0' }, { x: 0, y: 40, type: 'in1' },
+      { x: 80, y: 20, type: 'out0' }, { x: 80, y: 40, type: 'out1' }
     ],
     defaultProps: { maxVoltage: 24, maxCurrent: 1, prog0: 'I0 AND I1', prog1: 'NOT I0' }
   },
@@ -457,9 +457,9 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: ShiftRegisterSymbol, color: '#ff8c00',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
-      { x: 0, y: 15, type: 'data' }, { x: 0, y: 45, type: 'clk' },
-      { x: 80, y: 10, type: 'q0' }, { x: 80, y: 23, type: 'q1' },
-      { x: 80, y: 37, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
+      { x: 0, y: 20, type: 'data' }, { x: 0, y: 40, type: 'clk' },
+      { x: 80, y: 20, type: 'q0' }, { x: 80, y: 30, type: 'q1' },
+      { x: 80, y: 40, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
     ],
     defaultProps: { maxVoltage: 18, maxCurrent: 0.05 }
   },
@@ -468,11 +468,11 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: LatchSymbol, color: '#ff8c00',
     terminals: [
       { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
-      { x: 0, y: 10, type: 'd0' }, { x: 0, y: 23, type: 'd1' },
-      { x: 0, y: 37, type: 'd2' }, { x: 0, y: 50, type: 'd3' },
+      { x: 0, y: 20, type: 'd0' }, { x: 0, y: 30, type: 'd1' },
+      { x: 0, y: 40, type: 'd2' }, { x: 0, y: 50, type: 'd3' },
       { x: 20, y: 60, type: 'clk' },
-      { x: 80, y: 10, type: 'q0' }, { x: 80, y: 23, type: 'q1' },
-      { x: 80, y: 37, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
+      { x: 80, y: 20, type: 'q0' }, { x: 80, y: 30, type: 'q1' },
+      { x: 80, y: 40, type: 'q2' }, { x: 80, y: 50, type: 'q3' }
     ],
     defaultProps: { maxVoltage: 18, maxCurrent: 0.05 }
   },
@@ -480,8 +480,8 @@ Example: (I0 AND NOT I1) OR I1`,
     id: 'SEVEN_SEGMENT', name: '7-Segment', desc: 'Common cathode 7-segment display.',
     icon: SevenSegmentSymbol, color: '#ff003c',
     terminals: [
-      { x: 0, y: 15, type: 'a' }, { x: 0, y: 25, type: 'b' }, { x: 0, y: 35, type: 'c' },
-      { x: 0, y: 45, type: 'd' }, { x: 80, y: 20, type: 'e' }, { x: 80, y: 30, type: 'f' },
+      { x: 0, y: 20, type: 'a' }, { x: 0, y: 30, type: 'b' }, { x: 0, y: 40, type: 'c' },
+      { x: 0, y: 50, type: 'd' }, { x: 80, y: 20, type: 'e' }, { x: 80, y: 30, type: 'f' },
       { x: 80, y: 40, type: 'g' }, { x: 40, y: 60, type: 'gnd' }
     ],
     defaultProps: { forwardVoltage: 2.0, maxCurrent: 0.02 }
@@ -501,7 +501,7 @@ Example: (I0 AND NOT I1) OR I1`,
   SERVO: {
     id: 'SERVO', name: 'Servo Motor', desc: 'Rotates to an angle based on SIG voltage (0-5V).',
     icon: ServoSymbol, color: '#facc15',
-    terminals: [{ x: 0, y: 15, type: 'vcc' }, { x: 0, y: 30, type: 'sig' }, { x: 0, y: 45, type: 'gnd' }],
+    terminals: [{ x: 0, y: 20, type: 'vcc' }, { x: 0, y: 30, type: 'sig' }, { x: 0, y: 40, type: 'gnd' }],
     defaultProps: { resistance: 100, sigRes: 1000000, maxCurrent: 1 }
   }
 };
@@ -559,13 +559,17 @@ const formatUnit = (val, unit) => {
   return `${sign}${absVal.toFixed(2)} ${unit}`;
 };
 
-const getWirePath = (start, end) => {
+const getWirePoints = (start, end, waypoints) => {
+  if (waypoints && waypoints.length > 0) return [start, ...waypoints, end];
   const dx = Math.abs(end.x - start.x);
   const dy = Math.abs(end.y - start.y);
-  // If practically aligned, draw straight line
-  if (dx < 5 || dy < 5) return `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  if (dx < 5 || dy < 5) return [start, end];
   const midX = start.x + (end.x - start.x) / 2;
-  return `M ${start.x} ${start.y} L ${midX} ${start.y} L ${midX} ${end.y} L ${end.x} ${end.y}`;
+  return [start, { x: midX, y: start.y }, { x: midX, y: end.y }, end];
+};
+
+const getWirePath = (pts) => {
+  return `M ${pts[0].x} ${pts[0].y} ` + pts.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
 };
 
 const getComponentValueLabel = (comp) => {
@@ -992,22 +996,24 @@ const EXAMPLES = [
     name: "3D Robot Arm Linkage",
     data: {
       components: [
-        { id: "bat", type: "BATTERY", x: 60, y: 220, rotation: 0, props: { voltage: 5 } },
-        { id: "gnd", type: "GROUND", x: 60, y: 300, rotation: 0, props: {} },
-        { id: "pot1", type: "POTENTIOMETER", x: 200, y: 100, rotation: 0, props: { resistance: 10000, position: 50 } },
-        { id: "pot2", type: "POTENTIOMETER", x: 200, y: 220, rotation: 0, props: { resistance: 10000, position: 30 } },
-        { id: "pot3", type: "POTENTIOMETER", x: 200, y: 340, rotation: 0, props: { resistance: 10000, position: 70 } },
-        { id: "srv1", type: "SERVO", x: 400, y: 100, rotation: 0, props: {} },
-        { id: "srv2", type: "SERVO", x: 400, y: 220, rotation: 0, props: {} },
-        { id: "srv3", type: "SERVO", x: 400, y: 340, rotation: 0, props: {} }
+        { id: "bat", type: "BATTERY", x: 60, y: 100, rotation: 0, props: { voltage: 5 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 280, rotation: 0, props: {} },
+        { id: "sw1", type: "SWITCH", x: 180, y: 100, rotation: 0, props: { isOpen: false } },
+        { id: "pot1", type: "POTENTIOMETER", x: 300, y: 100, rotation: 0, props: { resistance: 10000, position: 50 } },
+        { id: "pot2", type: "POTENTIOMETER", x: 420, y: 100, rotation: 0, props: { resistance: 10000, position: 30 } },
+        { id: "pot3", type: "POTENTIOMETER", x: 540, y: 100, rotation: 0, props: { resistance: 10000, position: 70 } },
+        { id: "srv1", type: "SERVO", x: 300, y: 280, rotation: 0, props: {} },
+        { id: "srv2", type: "SERVO", x: 420, y: 280, rotation: 0, props: {} },
+        { id: "srv3", type: "SERVO", x: 540, y: 280, rotation: 0, props: {} }
       ],
       wires: [
-        { id: "w_vcc1", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot1", termIdx: 0 } },
-        { id: "w_vcc2", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot2", termIdx: 0 } },
-        { id: "w_vcc3", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot3", termIdx: 0 } },
-        { id: "w_vcc4", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv1", termIdx: 0 } },
-        { id: "w_vcc5", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv2", termIdx: 0 } },
-        { id: "w_vcc6", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv3", termIdx: 0 } },
+        { id: "w_bat_sw", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw1", termIdx: 0 } },
+        { id: "w_vcc1", from: { compId: "sw1", termIdx: 1 }, to: { compId: "pot1", termIdx: 0 } },
+        { id: "w_vcc2", from: { compId: "sw1", termIdx: 1 }, to: { compId: "pot2", termIdx: 0 } },
+        { id: "w_vcc3", from: { compId: "sw1", termIdx: 1 }, to: { compId: "pot3", termIdx: 0 } },
+        { id: "w_vcc4", from: { compId: "sw1", termIdx: 1 }, to: { compId: "srv1", termIdx: 0 } },
+        { id: "w_vcc5", from: { compId: "sw1", termIdx: 1 }, to: { compId: "srv2", termIdx: 0 } },
+        { id: "w_vcc6", from: { compId: "sw1", termIdx: 1 }, to: { compId: "srv3", termIdx: 0 } },
         { id: "w_gnd_bat", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
         { id: "w_gnd1", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot1", termIdx: 1 } },
         { id: "w_gnd2", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot2", termIdx: 1 } },
@@ -1020,6 +1026,10 @@ const EXAMPLES = [
         { id: "w_sig3", from: { compId: "pot3", termIdx: 2 }, to: { compId: "srv3", termIdx: 1 } }
       ],
       servoConfig: {
+        "sw1": { offsetX: -2, offsetY: 0, offsetZ: 2, parentId: null },
+        "pot1": { offsetX: 0, offsetY: 0, offsetZ: 2, parentId: null },
+        "pot2": { offsetX: 2, offsetY: 0, offsetZ: 2, parentId: null },
+        "pot3": { offsetX: 4, offsetY: 0, offsetZ: 2, parentId: null },
         "srv1": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null },
         "srv2": { axis: "Z", offsetX: 0, offsetY: 1, offsetZ: 0, parentId: "srv1" },
         "srv3": { axis: "Z", offsetX: 2.5, offsetY: 0, offsetZ: 0, parentId: "srv2" }
@@ -1097,6 +1107,7 @@ const App = () => {
   
   const [activeTerminal, setActiveTerminal] = useState(null);
   const [draggedComp, setDraggedComp] = useState(null);
+  const [draggedWaypoint, setDraggedWaypoint] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   
   const svgRef = useRef(null);
@@ -1562,7 +1573,21 @@ const App = () => {
       }
     }
 
-    if (draggedComp && activePointers.current.size === 1 && !pinchState.current.isPinching) {
+    if (draggedWaypoint && activePointers.current.size === 1 && !pinchState.current.isPinching) {
+      const dx = (e.clientX - draggedWaypoint.startX) / zoom;
+      const dy = (e.clientY - draggedWaypoint.startY) / zoom;
+      setWires(prev => prev.map(w => {
+        if (w.id === draggedWaypoint.wireId) {
+          const newWps = [...(w.waypoints || [])];
+          newWps[draggedWaypoint.index] = { 
+            x: snapToGrid(draggedWaypoint.initialX + dx), 
+            y: snapToGrid(draggedWaypoint.initialY + dy) 
+          };
+          return { ...w, waypoints: newWps };
+        }
+        return w;
+      }));
+    } else if (draggedComp && activePointers.current.size === 1 && !pinchState.current.isPinching) {
       const dx = (e.clientX - draggedComp.startX) / zoom;
       const dy = (e.clientY - draggedComp.startY) / zoom;
       setComponents(prev => prev.map(c => 
@@ -1579,6 +1604,39 @@ const App = () => {
     }
     if (activePointers.current.size === 0) {
       panState.current.isPanning = false;
+    }
+
+    if (draggedWaypoint) {
+      const dx = e.clientX - draggedWaypoint.startX;
+      const dy = e.clientY - draggedWaypoint.startY;
+      let handledDoubleClick = false;
+      
+      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+         const now = Date.now();
+         const wpId = `wp-${draggedWaypoint.wireId}-${draggedWaypoint.index}`;
+         if (lastClickRef.current.id === wpId && now - lastClickRef.current.time < 300) {
+            pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+            setWires(prev => prev.map(w => {
+               if (w.id === draggedWaypoint.wireId) {
+                  const newWps = [...w.waypoints];
+                  newWps.splice(draggedWaypoint.index, 1);
+                  return { ...w, waypoints: newWps };
+               }
+               return w;
+            }));
+            handledDoubleClick = true;
+         }
+         lastClickRef.current = { id: wpId, time: now };
+      }
+      
+      if (!handledDoubleClick && dragSnapshotRef.current) {
+         pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+      }
+      if (e.target.releasePointerCapture) {
+        try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
+      }
+      setDraggedWaypoint(null);
+      return;
     }
 
     if (draggedComp) {
@@ -2321,27 +2379,37 @@ const App = () => {
     );
   };
 
-  // Compute servo angles for the 3D View
-  const servoAngles = {};
+  // Compute node values for the 3D View
+  const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => c.type === 'SERVO').forEach(comp => {
-      let angle = 0;
-      if (isSimulating) {
-        let overrideDuty = null;
-        const sigWire = wires.find(w => 
-          (w.to.compId === comp.id && w.to.termIdx === 1) ||
-          (w.from.compId === comp.id && w.from.termIdx === 1)
-        );
-        if (sigWire) {
-          const sourceId = sigWire.from.compId === comp.id ? sigWire.to.compId : sigWire.from.compId;
-          const sourceComp = components.find(c => c.id === sourceId);
-          if (sourceComp && sourceComp.type === 'PWM') {
-            overrideDuty = sourceComp.props.dutyCycle !== undefined ? sourceComp.props.dutyCycle : 50;
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT'].includes(c.type)).forEach(comp => {
+      if (comp.type === 'SERVO') {
+        let angle = 0;
+        if (isSimulating) {
+          let overrideDuty = null;
+          const sigWire = wires.find(w => 
+            (w.to.compId === comp.id && w.to.termIdx === 1) ||
+            (w.from.compId === comp.id && w.from.termIdx === 1)
+          );
+          if (sigWire) {
+            const sourceId = sigWire.from.compId === comp.id ? sigWire.to.compId : sigWire.from.compId;
+            const sourceComp = components.find(c => c.id === sourceId);
+            if (sourceComp && sourceComp.type === 'PWM') {
+              overrideDuty = sourceComp.props.dutyCycle !== undefined ? sourceComp.props.dutyCycle : 50;
+            }
           }
+          angle = overrideDuty !== null ? (overrideDuty / 100) * 180 : Math.min(180, Math.max(0, (((simData.voltages[`${comp.id}-1`] || 0) - (simData.voltages[`${comp.id}-2`] || 0)) / 5) * 180));
         }
-        angle = overrideDuty !== null ? (overrideDuty / 100) * 180 : Math.min(180, Math.max(0, (((simData.voltages[`${comp.id}-1`] || 0) - (simData.voltages[`${comp.id}-2`] || 0)) / 5) * 180));
+        nodeValues[comp.id] = angle;
+      } else if (comp.type === 'POTENTIOMETER') {
+        nodeValues[comp.id] = comp.props.position || 0;
+      } else if (comp.type === 'PUSH_BUTTON') {
+        nodeValues[comp.id] = comp.props.isPressed || false;
+      } else if (comp.type === 'SWITCH') {
+        nodeValues[comp.id] = comp.props.isOpen !== undefined ? comp.props.isOpen : true;
+      } else if (comp.type === 'SEVEN_SEGMENT') {
+        nodeValues[comp.id] = simData.sevenSegmentData?.[comp.id] || {};
       }
-      servoAngles[comp.id] = angle;
     });
   }
 
@@ -2407,9 +2475,9 @@ const App = () => {
         </h2>
         
         {/* Component Groups */}
-        <div className="flex-1 flex flex-row md:flex-col gap-4 overflow-x-auto md:overflow-y-auto w-full pb-1 md:pb-0 hide-scrollbar items-center md:items-stretch">
+        <div className="flex-1 flex flex-row md:flex-col gap-2 md:gap-4 overflow-x-auto md:overflow-y-auto touch-pan-x md:touch-auto w-full pb-1 md:pb-0 hide-scrollbar items-center md:items-stretch">
            {Object.entries(COMPONENT_GROUPS).map(([groupName, keys]) => (
-               <div key={groupName} className="flex flex-row md:flex-col gap-1.5 items-center md:items-stretch border-r md:border-r-0 md:border-b border-cyan-900/30 pr-4 md:pr-0 md:pb-3 last:border-0">
+               <div key={groupName} className="flex flex-row md:flex-col gap-1.5 items-center md:items-stretch border-r md:border-r-0 md:border-b border-cyan-900/30 pr-2 md:pr-0 md:pb-3 last:border-0 shrink-0 md:shrink">
                   <div 
                     className="hidden md:flex items-center justify-between cursor-pointer group"
                     onClick={() => toggleGroup(groupName)}
@@ -2427,7 +2495,7 @@ const App = () => {
                         title={info.desc}
                         onDragStart={(e) => e.dataTransfer.setData('circuit/component', key)}
                         onClick={() => addComponent(key)}
-                        className={`flex items-center gap-2 p-1.5 cyber-button rounded-sm shrink-0 ${collapsedGroups[groupName] ? 'md:hidden' : ''}`}
+                            className={`flex items-center gap-2 p-2 md:p-1.5 cyber-button rounded-sm shrink-0 ${collapsedGroups[groupName] ? 'md:hidden' : ''}`}
                       >
                         <div className="flex items-center justify-center w-5 h-5" style={{ color: info.color, filter: `drop-shadow(0 0 2px ${info.color})` }}>
                           <Icon size={14} />
@@ -2439,7 +2507,7 @@ const App = () => {
                </div>
            ))}
            {Object.keys(customComponents).length > 0 && (
-             <div className="flex flex-row md:flex-col gap-1.5 items-center md:items-stretch border-r md:border-r-0 md:border-b border-cyan-900/30 pr-4 md:pr-0 md:pb-3 last:border-0">
+             <div className="flex flex-row md:flex-col gap-1.5 items-center md:items-stretch border-r md:border-r-0 md:border-b border-cyan-900/30 pr-2 md:pr-0 md:pb-3 last:border-0 shrink-0 md:shrink">
                <div 
                  className="hidden md:flex items-center justify-between cursor-pointer group"
                  onClick={() => toggleGroup('Custom Library')}
@@ -2454,7 +2522,7 @@ const App = () => {
                      title={info.desc}
                      onDragStart={(e) => e.dataTransfer.setData('circuit/component', info.id)}
                      onClick={() => addComponent(info.id)}
-                     className="flex-1 flex items-center gap-2 p-1.5 cyber-button rounded-sm truncate"
+                     className="flex-1 flex items-center gap-2 p-2 md:p-1.5 cyber-button rounded-sm truncate"
                    >
                      <div className="flex items-center justify-center w-5 h-5 shrink-0" style={{ color: '#b829ea', filter: `drop-shadow(0 0 2px #b829ea)` }}>
                        <CustomComponentIcon size={14} />
@@ -2463,7 +2531,7 @@ const App = () => {
                    </button>
                    <button 
                      onClick={(e) => deleteCustomComponent(e, info.id)}
-                     className="flex items-center justify-center px-1.5 cyber-button cyber-button-danger rounded-sm shrink-0"
+                     className="flex items-center justify-center px-2 md:px-1.5 cyber-button cyber-button-danger rounded-sm shrink-0"
                      title="Delete Custom Component"
                    >
                      <Trash2 size={12} />
@@ -2486,12 +2554,12 @@ const App = () => {
         <input type="file" accept=".json,.cir,.net,.txt" ref={fileInputRef} onChange={handleImport} style={{ display: 'none' }} />
 
         {/* Toolbar */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[95%] md:w-auto cyber-panel px-1.5 py-1 rounded-sm flex items-center justify-between md:justify-center gap-1 shadow-lg z-20">
-          <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[95%] md:w-auto max-w-[98vw] overflow-x-auto hide-scrollbar touch-pan-x cyber-panel px-1.5 py-1 rounded-sm flex items-center justify-start md:justify-center gap-1 shadow-lg z-20">
+          <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5 shrink-0">
             <button 
               onClick={undo}
               disabled={past.length === 0}
-              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               title="Undo (Ctrl+Z)"
             >
               <Undo size={14} />
@@ -2499,17 +2567,17 @@ const App = () => {
             <button 
               onClick={redo}
               disabled={future.length === 0}
-              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               title="Redo (Ctrl+Y)"
             >
               <Redo size={14} />
             </button>
           </div>
-          <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5 pl-1">
+          <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5 pl-1 shrink-0">
             <button 
               onClick={rotateSelected}
               disabled={selectedIds.length === 0}
-              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               title="Rotate Component (R)"
             >
               <RotateCw size={14} />
@@ -2517,7 +2585,7 @@ const App = () => {
             <button 
               onClick={handleSaveToLibrary}
               disabled={selectedIds.length === 0}
-              className="p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               title="Save Selection to Library"
             >
               <Save size={14} />
@@ -2525,7 +2593,7 @@ const App = () => {
             <button 
               onClick={() => setIsPropDialogOpen(!isPropDialogOpen)}
               disabled={selectedIds.length !== 1 && !selectedWireId}
-              className={`p-1.5 cyber-button rounded-sm ${isPropDialogOpen ? 'bg-cyan-500/20' : ''} disabled:opacity-30 disabled:cursor-not-allowed`}
+              className={`p-2 md:p-1.5 cyber-button rounded-sm ${isPropDialogOpen ? 'bg-cyan-500/20' : ''} disabled:opacity-30 disabled:cursor-not-allowed`}
               title="Properties (Double-tap item)"
             >
               <Sliders size={14} />
@@ -2533,17 +2601,17 @@ const App = () => {
             <button 
               onClick={deleteSelected}
               disabled={selectedIds.length === 0 && !selectedWireId}
-              className="p-1.5 cyber-button cyber-button-danger rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              className="p-2 md:p-1.5 cyber-button cyber-button-danger rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
               title="Delete Selected (Del)"
             >
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="flex items-center gap-1.5 px-1.5">
+          <div className="flex items-center gap-1.5 px-1.5 shrink-0">
             <span className="hidden md:inline text-[9px] font-mono text-cyan-600 cyber-text">ZOOM</span>
             <button 
               onClick={handleZoomToFit}
-              className="p-1 cyber-button rounded-sm"
+              className="p-2 md:p-1 cyber-button rounded-sm"
               title="Zoom to Fit"
             >
               <Maximize size={12} />
@@ -2567,7 +2635,7 @@ const App = () => {
               className="w-12 md:w-16 accent-cyan-400"
             />
           </div>
-          <div className="flex items-center gap-1.5 px-1.5 border-l border-cyan-500/20">
+          <div className="flex items-center gap-1.5 px-1.5 border-l border-cyan-500/20 shrink-0">
             <span className="hidden md:inline text-[9px] font-mono text-cyan-600 cyber-text" title="Simulation Timestep">SPEED</span>
             <input 
               type="range" min="0.001" max="0.1" step="0.001" value={simSpeed} 
@@ -2576,13 +2644,13 @@ const App = () => {
               title={`Timestep: ${simSpeed}s`}
             />
           </div>
-          <div className="pl-1.5 border-l border-cyan-500/20 flex items-center gap-1">
-             <button onClick={() => setViewMode(v => v === '2D' ? '3D' : '2D')} className={`p-1.5 rounded-sm ${viewMode === '3D' ? 'cyber-button bg-cyan-500/20' : 'cyber-button'}`} title="3D Robot View">
+          <div className="pl-1.5 border-l border-cyan-500/20 flex items-center gap-1 shrink-0">
+             <button onClick={() => setViewMode(v => v === '2D' ? '3D' : '2D')} className={`p-2 md:p-1.5 rounded-sm ${viewMode === '3D' ? 'cyber-button bg-cyan-500/20' : 'cyber-button'}`} title="3D Robot View">
                <Box size={14} />
              </button>
              <button 
                onClick={() => setIsSimulating(!isSimulating)}
-               className={`flex items-center justify-center gap-1 px-2.5 py-1 rounded-sm cyber-text text-[10px] whitespace-nowrap ${
+               className={`flex items-center justify-center gap-1 px-3 py-1.5 md:px-2.5 md:py-1 rounded-sm cyber-text text-[10px] whitespace-nowrap ${
                  isSimulating ? 'cyber-button cyber-button-danger' : 'cyber-button'
                }`}
                style={!isSimulating ? { borderColor: 'rgba(57,255,20,0.4)', color: '#39ff14' } : {}}
@@ -2591,49 +2659,36 @@ const App = () => {
              </button>
              <button 
                onClick={clearWorkspace} 
-               className={`p-1.5 rounded-sm ${confirmClear ? 'cyber-button cyber-button-danger' : 'cyber-button'}`} 
+               className={`p-2 md:p-1.5 rounded-sm ${confirmClear ? 'cyber-button cyber-button-danger' : 'cyber-button'}`} 
                title={confirmClear ? "Click again to confirm clear" : "Clear Workspace"}
              >
                <RefreshCcw size={14} />
              </button>
 
-             {/* Examples Library Dropdown */}
-             <div className="relative">
-                 <button onClick={() => setIsLibraryOpen(!isLibraryOpen)} className={`p-1.5 rounded-sm ${isLibraryOpen ? 'cyber-button cyber-button-danger' : 'cyber-button'}`} title="Library / Examples">
-                   <Book size={14} />
-                 </button>
-                 {isLibraryOpen && (
-                     <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 cyber-panel rounded-sm p-1 flex flex-col gap-1 shadow-xl z-50">
-                         <div className="text-[9px] text-cyan-600 px-2 py-1 cyber-text font-bold border-b border-cyan-900/50 mb-1">LOAD.EXAMPLE_</div>
-                         {EXAMPLES.map((ex, i) => (
-                             <button key={i} onClick={() => loadExample(ex.data, ex.name)} className="text-left px-2 py-1.5 text-[10px] cyber-button rounded-sm w-full truncate">
-                                 {ex.name}
-                             </button>
-                         ))}
-                     </div>
-                 )}
-             </div>
+             <button onClick={() => setIsLibraryOpen(true)} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Library / Examples">
+               <Book size={14} />
+             </button>
 
-             <button onClick={() => fileInputRef.current?.click()} className="p-1.5 cyber-button rounded-sm" title="Import JSON/SPICE">
+             <button onClick={() => fileInputRef.current?.click()} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Import JSON/SPICE">
                <Upload size={14} />
              </button>
-             <button onClick={handlePasteSpice} className="p-1.5 cyber-button rounded-sm" title="Paste SPICE">
+             <button onClick={handlePasteSpice} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Paste SPICE">
                <ClipboardPaste size={14} />
              </button>
-             <button onClick={handleExport} className="p-1.5 cyber-button rounded-sm" title="Export JSON">
+             <button onClick={handleExport} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Export JSON">
                <Download size={14} />
              </button>
-             <button onClick={() => setSpiceViewerCode(generateSpiceNetlist())} className="p-1.5 cyber-button rounded-sm" title="View SPICE Netlist">
+             <button onClick={() => setSpiceViewerCode(generateSpiceNetlist())} className="p-2 md:p-1.5 cyber-button rounded-sm" title="View SPICE Netlist">
                <FileText size={14} />
              </button>
-             <button onClick={handleSpiceExport} className="p-1.5 cyber-button rounded-sm" title="Export to SPICE (.cir)">
+             <button onClick={handleSpiceExport} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Export to SPICE (.cir)">
                <FileCode size={14} />
              </button>
-             <button onClick={() => setShowHelp(true)} className="p-1.5 cyber-button rounded-sm" title="Help / Shortcuts">
+             <button onClick={() => setShowHelp(true)} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Help / Shortcuts">
                <HelpCircle size={14} />
              </button>
              {deferredPrompt && (
-               <button onClick={handleInstallClick} className="p-1.5 cyber-button rounded-sm" title="Install App">
+               <button onClick={handleInstallClick} className="p-2 md:p-1.5 cyber-button rounded-sm" title="Install App">
                  <MonitorSmartphone size={14} />
                </button>
              )}
@@ -2687,7 +2742,8 @@ const App = () => {
                 const isSelected = selectedWireId === wire.id;
                 
                 const isBurnedWire = isSimulating && burnedStatesRef.current[wire.id];
-                const pathString = getWirePath(start, end);
+                const pts = getWirePoints(start, end, wire.waypoints);
+                const pathString = getWirePath(pts);
 
                 let strokeColor = isSelected ? "#fff" : "rgba(0, 240, 255, 0.3)";
                 let wireGlow = "none";
@@ -2703,8 +2759,9 @@ const App = () => {
                    wireGlow = "url(#neonGlow)";
                 }
 
-                const midX = (start.x + end.x) / 2;
-                const midY = (start.y + end.y) / 2;
+                const midSegmentIdx = Math.floor((pts.length - 1) / 2);
+                const midX = (pts[midSegmentIdx].x + pts[midSegmentIdx + 1].x) / 2;
+                const midY = (pts[midSegmentIdx].y + pts[midSegmentIdx + 1].y) / 2;
 
                 return (
                   <g key={wire.id} className="cursor-pointer" onPointerDown={(e) => handleWirePointerDown(e, wire.id)}>
@@ -2747,6 +2804,62 @@ const App = () => {
                         <text x={midX} y={midY + 12} textAnchor="middle" fontSize="6" fill="#ff003c" className="font-bold cyber-glow animate-pulse pointer-events-none">
                           ⚠️ MELTED
                         </text>
+                    )}
+                    {isSelected && !isSimulating && (
+                      <g>
+                        {(wire.waypoints || []).map((wp, i) => (
+                          <circle
+                            key={`wp-${i}`}
+                            cx={wp.x} cy={wp.y} r="6"
+                            fill="#00f0ff"
+                            className="cursor-move touch-none"
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+                              activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                              dragSnapshotRef.current = { components, wires };
+                              setDraggedWaypoint({
+                                wireId: wire.id, index: i, startX: e.clientX, startY: e.clientY, initialX: wp.x, initialY: wp.y
+                              });
+                            }}
+                          />
+                        ))}
+                        {(() => {
+                          const mids = [];
+                          for (let i = 0; i < pts.length - 1; i++) {
+                            mids.push({ x: (pts[i].x + pts[i+1].x) / 2, y: (pts[i].y + pts[i+1].y) / 2, index: i });
+                          }
+                          return mids.map((mid, i) => (
+                            <circle
+                              key={`mid-${i}`}
+                              cx={mid.x} cy={mid.y} r="5"
+                              fill="rgba(0, 240, 255, 0.3)"
+                              className="cursor-pointer touch-none hover:fill-[#00f0ff] transition-colors"
+                              onPointerDown={(e) => {
+                                e.stopPropagation();
+                                if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+                                activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                                dragSnapshotRef.current = { components, wires };
+                                let newWps = [];
+                                let newIndex = mid.index;
+                                if (!wire.waypoints || wire.waypoints.length === 0) {
+                                  const autoWps = pts.slice(1, pts.length - 1);
+                                  newWps = autoWps.map(p => ({ x: p.x, y: p.y }));
+                                } else {
+                                  newWps = [...wire.waypoints];
+                                }
+                                const snappedX = snapToGrid(mid.x);
+                                const snappedY = snapToGrid(mid.y);
+                                newWps.splice(newIndex, 0, { x: snappedX, y: snappedY });
+                                setWires(prev => prev.map(w => w.id === wire.id ? { ...w, waypoints: newWps } : w));
+                                setDraggedWaypoint({
+                                  wireId: wire.id, index: newIndex, startX: e.clientX, startY: e.clientY, initialX: snappedX, initialY: snappedY
+                                });
+                              }}
+                            />
+                          ));
+                        })()}
+                      </g>
                     )}
                   </g>
                 );
@@ -2873,7 +2986,7 @@ const App = () => {
                             filter={isActive ? 'url(#neonGlow)' : 'none'}
                           />
                           <circle
-                            cx={term.x} cy={term.y} r="12"
+                            cx={term.x} cy={term.y} r="5"
                             fill="transparent"
                             className="cursor-crosshair touch-none"
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
@@ -2995,10 +3108,11 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              servos={components.filter(c => c.type === 'SERVO')}
-              servoAngles={servoAngles}
-              servoConfig={servoConfig}
-              setServoConfig={setServoConfig}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT'].includes(c.type))}
+              nodeValues={nodeValues}
+              nodeConfig={servoConfig}
+              setNodeConfig={setServoConfig}
+              onUpdateProp={(id, key, val) => setComponents(prev => prev.map(c => c.id === id ? { ...c, props: { ...c.props, [key]: val } } : c))}
             />
           </div>
         )}
@@ -3025,7 +3139,7 @@ const App = () => {
 
           <button 
             onClick={() => setIsPropDialogOpen(false)}
-            className="md:hidden absolute top-2 right-2 p-1.5 cyber-button rounded-sm"
+            className="md:hidden absolute top-2 right-2 p-2 cyber-button rounded-sm text-xs"
           >✕</button>
 
           <div className="pt-1 md:pt-0 shrink-0">
@@ -3461,6 +3575,31 @@ const App = () => {
         </div>
       )}
 
+      {/* Examples Modal */}
+      {isLibraryOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="cyber-panel flex flex-col w-full max-w-sm h-auto max-h-[80vh] rounded-sm border border-cyan-500/50 shadow-2xl">
+            <div className="flex justify-between items-center p-3 border-b border-cyan-900/50">
+              <h3 className="text-cyan-400 font-bold cyber-text text-sm tracking-wider flex items-center gap-2">
+                <Book size={16} /> Examples Library
+              </h3>
+              <button onClick={() => setIsLibraryOpen(false)} className="p-2 md:p-1.5 cyber-button cyber-button-danger rounded-sm">✕</button>
+            </div>
+            <div className="flex-1 overflow-auto p-2 bg-[#050507] flex flex-col gap-1">
+              {EXAMPLES.map((ex, i) => (
+                <button 
+                  key={i} 
+                  onClick={() => loadExample(ex.data, ex.name)} 
+                  className="text-left px-3 py-2.5 text-[11px] md:text-xs cyber-button rounded-sm w-full truncate border border-cyan-900/30 hover:border-cyan-500"
+                >
+                  {ex.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Help Modal */}
       {showHelp && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -3480,6 +3619,7 @@ const App = () => {
                   <li><strong className="text-cyan-400">Select:</strong> Click a component or wire.</li>
                   <li><strong className="text-cyan-400">Multi-Select:</strong> Hold <kbd className="bg-cyan-900/30 px-1 rounded font-mono">Shift</kbd> and click components.</li>
                   <li><strong className="text-cyan-400">Properties:</strong> Double-click a component/wire or use the Sliders button.</li>
+                  <li><strong className="text-cyan-400">Wire Routing:</strong> Select a wire and drag the translucent midpoints to create corners. Double-click a corner to remove it.</li>
                 </ul>
               </div>
               <div>

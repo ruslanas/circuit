@@ -393,9 +393,8 @@ const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateO
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp }) {
+export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode }) {
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
 
   const checkCycle = (id, targetParentId) => {
     let curr = targetParentId;
@@ -528,19 +527,6 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       )}
 
       <div className="flex-1 bg-[#050507] relative">
-        {/* Editor Overlay Button */}
-        <div className="absolute top-4 right-4 z-20">
-          <button
-            onClick={() => setIsEditMode(prev => !prev)}
-            className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase rounded-sm border transition-colors shadow-lg ${
-              isEditMode 
-                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' 
-                : 'bg-black/60 border-cyan-900/50 text-cyan-600 hover:border-cyan-700 hover:text-cyan-400'
-            }`}
-          >
-            {isEditMode ? 'Close Editor' : 'Edit 3D Layout'}
-          </button>
-        </div>
         <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => setSelectedNode(null)}>
           <ambientLight intensity={0.5} /><directionalLight position={[10, 10, 5]} intensity={1.5} /><OrbitControls makeDefault />
           <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="rgba(0,240,255,0.2)" sectionThickness={1} cellThickness={0.5} />

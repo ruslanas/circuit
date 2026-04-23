@@ -22,7 +22,8 @@ import {
   HelpCircle,
   Undo,
   Redo,
-  Box
+  Box,
+  ArrowRightLeft
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
 import Robot3DView from './Robot3DView.jsx';
@@ -1197,6 +1198,7 @@ const App = () => {
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [showHelp, setShowHelp] = useState(false);
   const [viewMode, setViewMode] = useState('2D'); // '2D' | '3D'
+  const [isEditMode, setIsEditMode] = useState(false);
   const lastClickRef = useRef({ id: null, time: 0 });
 
   const [past, setPast] = useState([]);
@@ -1280,6 +1282,16 @@ const App = () => {
     setFuture(newFuture);
     setComponents(next.components);
     setWires(next.wires);
+    setSelectedIds([]);
+    setSelectedWireId(null);
+  };
+
+  const flipSelected = () => {
+    if (selectedIds.length === 0) return;
+    pushStateToHistory(components, wires);
+    setComponents(prev => prev.map(c => 
+      selectedIds.includes(c.id) ? { ...c, flippedX: !c.flippedX } : c
+    ));
     setSelectedIds([]);
     setSelectedWireId(null);
   };
@@ -2325,6 +2337,8 @@ const App = () => {
         deleteSelected();
       } else if (e.key.toLowerCase() === 'r') {
         rotateSelected();
+      } else if (e.key.toLowerCase() === 'f') {
+        flipSelected();
       } else if (e.key === 'Escape') {
         setSelectedIds([]);
         setSelectedWireId(null);
@@ -2346,8 +2360,13 @@ const App = () => {
   const getTerminalCoords = (comp, termIdx) => {
     if (!comp) return { x: 0, y: 0 };
     const type = COMPONENT_TYPES[comp.type];
-    const term = type.terminals[termIdx];
+    const term = { ...type.terminals[termIdx] };
     const cx = 40; const cy = 30;
+
+    if (comp.flippedX) {
+      term.x = 2 * cx - term.x;
+    }
+
     const rad = (comp.rotation * Math.PI) / 180;
     const rx = Math.cos(rad) * (term.x - cx) - Math.sin(rad) * (term.y - cy) + cx;
     const ry = Math.sin(rad) * (term.x - cx) + Math.cos(rad) * (term.y - cy) + cy;
@@ -2673,7 +2692,7 @@ const App = () => {
         <input type="file" accept=".json,.cir,.net,.txt" ref={fileInputRef} onChange={handleImport} style={{ display: 'none' }} />
 
         {/* Toolbar */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-[95%] md:w-auto max-w-[98vw] overflow-x-auto hide-scrollbar touch-pan-x cyber-panel px-1.5 py-1 rounded-sm flex items-center justify-start md:justify-center gap-1 shadow-lg z-20">
+        <div className="w-full overflow-x-auto hide-scrollbar touch-pan-x cyber-panel px-2 py-1.5 flex items-center justify-start gap-1 shadow-lg z-20 border-x-0 border-t-0 rounded-none shrink-0">
           <div className="flex items-center gap-0.5 border-r border-cyan-500/20 pr-1.5 shrink-0">
             <button 
               onClick={undo}
@@ -2700,6 +2719,14 @@ const App = () => {
               title="Rotate Component (R)"
             >
               <RotateCw size={14} />
+            </button>
+            <button 
+              onClick={flipSelected}
+              disabled={selectedIds.length === 0}
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Flip Component Horizontally (F)"
+            >
+              <ArrowRightLeft size={14} />
             </button>
             <button 
               onClick={handleSaveToLibrary}
@@ -2764,9 +2791,27 @@ const App = () => {
             />
           </div>
           <div className="pl-1.5 border-l border-cyan-500/20 flex items-center gap-1 shrink-0">
-             <button onClick={() => setViewMode(v => v === '2D' ? '3D' : '2D')} className={`p-2 md:p-1.5 rounded-sm ${viewMode === '3D' ? 'cyber-button bg-cyan-500/20' : 'cyber-button'}`} title="3D Robot View">
+             <button 
+               onClick={() => {
+                 if (viewMode === '3D') {
+                   setViewMode('2D');
+                   setIsEditMode(false);
+                 } else {
+                   setViewMode('3D');
+                 }
+               }} 
+               className={`p-2 md:p-1.5 rounded-sm ${viewMode === '3D' ? 'cyber-button bg-cyan-500/20' : 'cyber-button'}`} title="3D Robot View">
                <Box size={14} />
              </button>
+             {viewMode === '3D' && (
+               <button 
+                 onClick={() => setIsEditMode(!isEditMode)} 
+                 className={`flex items-center justify-center px-3 py-1.5 md:px-2.5 md:py-1 rounded-sm cyber-text text-[10px] whitespace-nowrap ${isEditMode ? 'cyber-button bg-cyan-500/20 text-cyan-300' : 'cyber-button'}`}
+                 title="Toggle 3D Layout Editor"
+               >
+                 {isEditMode ? 'Close Editor' : 'Edit 3D'}
+               </button>
+             )}
              <button 
                onClick={() => setIsSimulating(!isSimulating)}
                className={`flex items-center justify-center gap-1 px-3 py-1.5 md:px-2.5 md:py-1 rounded-sm cyber-text text-[10px] whitespace-nowrap ${
@@ -3053,6 +3098,7 @@ const App = () => {
                     onPointerDown={(e) => handleComponentPointerDown(e, comp.id)}
                     className="cursor-move select-none touch-none"
                   >
+                    <g transform={comp.flippedX ? 'translate(80, 0) scale(-1, 1)' : undefined}>
                     <rect
                       x="16" y="6" width="48" height="48" rx="8"
                       fill={boxColor}
@@ -3085,9 +3131,14 @@ const App = () => {
                       </g>
                       </g>
                     )}
+                    </g>
 
                     {/* Terminals */}
-                    {type.terminals.map((term, idx) => {
+                    {type.terminals.map((originalTerm, idx) => {
+                      const term = { ...originalTerm };
+                      if (comp.flippedX) {
+                        term.x = 80 - term.x;
+                      }
                       const isActive = activeTerminal?.compId === comp.id && activeTerminal?.termIdx === idx;
                       const labelX = term.x + (term.x < 40 ? 8 : (term.x > 40 ? -8 : 0));
                       let labelY = term.y + 2;
@@ -3122,7 +3173,7 @@ const App = () => {
                                stroke="#050507" strokeWidth="3" strokeLinejoin="round"
                                style={{ paintOrder: 'stroke' }}
                              >
-                               {['NPN', 'PNP'].includes(comp.type) ? term.type.charAt(0) : term.type}
+                               {['NPN', 'PNP'].includes(comp.type) ? originalTerm.type.charAt(0) : originalTerm.type}
                              </text>
                           )}
                         </g>
@@ -3232,6 +3283,7 @@ const App = () => {
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
               onUpdateProp={(id, key, val) => setComponents(prev => prev.map(c => c.id === id ? { ...c, props: { ...c.props, [key]: val } } : c))}
+              isEditMode={isEditMode}
             />
           </div>
         )}

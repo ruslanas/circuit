@@ -1142,6 +1142,47 @@ const EXAMPLES = [
         "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 3, parentId: null }
       }
     }
+  },
+  {
+    name: "Auto-Soldering: Corner Sweep",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 60, rotation: 0, props: { voltage: 5, maxCurrent: 5 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 240, rotation: 0, props: {} },
+        { id: "iron", type: "SOLDERING_IRON", x: 180, y: 60, rotation: 0, props: { resistance: 10, maxPower: 50, maxCurrent: 5 } },
+        { id: "bed", type: "WORK_BED", x: 300, y: 60, rotation: 0, props: {} },
+        { id: "osc1", type: "OSCILLATOR", x: 180, y: 140, rotation: 0, props: { waveform: "SQUARE", voltage: 1.25, offset: 2.5, frequency: 0.5 } },
+        { id: "osc2", type: "OSCILLATOR", x: 300, y: 140, rotation: 0, props: { waveform: "SQUARE", voltage: 1.25, offset: 2.5, frequency: 0.25 } },
+        { id: "osc3", type: "OSCILLATOR", x: 420, y: 140, rotation: 0, props: { waveform: "SQUARE", voltage: 1.0, offset: 2.5, frequency: 1 } },
+        { id: "srv1", type: "SERVO", x: 180, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "srv2", type: "SERVO", x: 300, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "srv3", type: "SERVO", x: 420, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "iron", termIdx: 0 } },
+        { id: "w2", from: { compId: "iron", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w3", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w4", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv1", termIdx: 0 } },
+        { id: "w5", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv2", termIdx: 0 } },
+        { id: "w6", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv3", termIdx: 0 } },
+        { id: "w7", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv1", termIdx: 2 } },
+        { id: "w8", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv2", termIdx: 2 } },
+        { id: "w9", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv3", termIdx: 2 } },
+        { id: "w10", from: { compId: "osc1", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w11", from: { compId: "osc2", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w12", from: { compId: "osc3", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w13", from: { compId: "osc1", termIdx: 0 }, to: { compId: "srv1", termIdx: 1 } },
+        { id: "w14", from: { compId: "osc2", termIdx: 0 }, to: { compId: "srv2", termIdx: 1 } },
+        { id: "w15", from: { compId: "osc3", termIdx: 0 }, to: { compId: "srv3", termIdx: 1 } }
+      ],
+      servoConfig: {
+        "srv1": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null },
+        "srv2": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv1" },
+        "srv3": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv2" },
+        "iron": { offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv3" },
+        "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 3, parentId: null }
+      }
+    }
   }
 ];
 

@@ -948,7 +948,7 @@ export function simulateTick({
       const current = wireCurrentsMap[w.id] || 0;
       const maxI = w.props?.maxCurrent !== undefined ? w.props.maxCurrent : 5;
       if (Math.abs(current) > maxI) {
-        burnedStates[w.id] = true;
+        burnedStates[w.id] = "MAX CURRENT EXCEEDED";
       }
     }
   });
@@ -957,6 +957,7 @@ export function simulateTick({
     if (!burnedStates[c.id]) {
       const type = c.type;
       let isBurned = false;
+      let burnReason = "OVERLOAD";
       let current = 0;
       if (type === 'NPN') current = branchCurrentsMap[`${c.id}_CE`] || 0;
       else if (type === 'PNP') current = branchCurrentsMap[`${c.id}_EC`] || 0;
@@ -972,34 +973,34 @@ export function simulateTick({
       const maxV = c.props?.maxVoltage !== undefined ? c.props.maxVoltage : 25.0;
       const rBase = Math.max(1e-3, c.props?.resistance !== undefined ? c.props.resistance : (type === 'MOTOR' || type === 'PROPELLER' ? 10 : 1000));
       
-      if (type === 'RESISTOR') isBurned = (current * current * rBase) > maxP;
-      else if (type === 'LED' || type === 'DIODE') isBurned = Math.abs(current) > maxI;
+      if (type === 'RESISTOR') { if ((current * current * rBase) > maxP) { isBurned = true; burnReason = "MAX POWER EXCEEDED"; } }
+      else if (type === 'LED' || type === 'DIODE') { if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; } }
       else if (type === 'POTENTIOMETER') {
         const pos = Math.max(0, Math.min(100, c.props?.position || 0)) / 100;
         const i1 = branchCurrentsMap[`${c.id}_R1`] || 0;
         const i2 = branchCurrentsMap[`${c.id}_R2`] || 0;
-        isBurned = (i1 * i1 * (rBase * pos) + i2 * i2 * (rBase * (1 - pos))) > maxP;
+        if ((i1 * i1 * (rBase * pos) + i2 * i2 * (rBase * (1 - pos))) > maxP) { isBurned = true; burnReason = "MAX POWER EXCEEDED"; }
       }
       else if (type === 'NPN' || type === 'PNP') {
-        isBurned = Math.abs(current) > maxI;
+        if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
       else if (['MOTOR', 'PROPELLER', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
-        isBurned = Math.abs(current) > maxI;
+        if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
       else if (type === 'CAPACITOR') {
         const v = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
-        isBurned = Math.abs(v) > maxV;
+        if (Math.abs(v) > maxV) { isBurned = true; burnReason = "MAX VOLTAGE EXCEEDED"; }
       } else if (type === 'SEVEN_SEGMENT') {
         let segmentBurned = false;
         ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(seg => {
             const segCurrent = branchCurrentsMap[`${c.id}_${seg}`] || 0;
             if (Math.abs(segCurrent) > maxI) segmentBurned = true;
         });
-        isBurned = segmentBurned;
+        if (segmentBurned) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
 
       if (isBurned) {
-        burnedStates[c.id] = true;
+        burnedStates[c.id] = burnReason;
       }
     }
   });

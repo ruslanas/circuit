@@ -1223,34 +1223,68 @@ const EXAMPLES = [
         { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 5, maxCurrent: 10 } },
         { id: "gnd", type: "GROUND", x: 60, y: 260, rotation: 0, props: {} },
         { id: "gyro", type: "GYROSCOPE", x: 200, y: 160, rotation: 0, props: { pitch: 0, roll: 0, maxCurrent: 2 } },
-        { id: "plc1", type: "PLC", x: 360, y: 100, rotation: 0, props: { prog0: "I0", prog1: "I1", maxCurrent: 5 } },
-        { id: "plc2", type: "PLC", x: 360, y: 220, rotation: 0, props: { prog0: "I0", prog1: "I1", maxCurrent: 5 } },
         { id: "propF", type: "PROPELLER", x: 520, y: 40, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
-        { id: "propB", type: "PROPELLER", x: 520, y: 120, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
-        { id: "propR", type: "PROPELLER", x: 520, y: 200, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
-        { id: "propL", type: "PROPELLER", x: 520, y: 280, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
-        { id: "bed", type: "WORK_BED", x: 680, y: 160, rotation: 0, props: {} }
+        { id: "npnF", type: "NPN", x: 380, y: 40, rotation: 0, props: { beta: 100 } },
+        { id: "dioF", type: "DIODE", x: 520, y: -20, rotation: 180, props: { forwardVoltage: 0.7, maxCurrent: 5 } },
+        { id: "rbF", type: "RESISTOR", x: 280, y: 20, rotation: 0, props: { resistance: 1000 } },
+        { id: "rgF", type: "RESISTOR", x: 280, y: 60, rotation: 0, props: { resistance: 470 } },
+        { id: "propB", type: "PROPELLER", x: 520, y: 160, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "npnB", type: "NPN", x: 380, y: 160, rotation: 0, props: { beta: 100 } },
+        { id: "dioB", type: "DIODE", x: 520, y: 100, rotation: 180, props: { forwardVoltage: 0.7, maxCurrent: 5 } },
+        { id: "rbB", type: "RESISTOR", x: 280, y: 140, rotation: 0, props: { resistance: 1000 } },
+        { id: "rgB", type: "RESISTOR", x: 280, y: 180, rotation: 0, props: { resistance: 470 } },
+        { id: "propR", type: "PROPELLER", x: 520, y: 280, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "npnR", type: "NPN", x: 380, y: 280, rotation: 0, props: { beta: 100 } },
+        { id: "dioR", type: "DIODE", x: 520, y: 220, rotation: 180, props: { forwardVoltage: 0.7, maxCurrent: 5 } },
+        { id: "rbR", type: "RESISTOR", x: 280, y: 260, rotation: 0, props: { resistance: 1000 } },
+        { id: "rgR", type: "RESISTOR", x: 280, y: 300, rotation: 0, props: { resistance: 470 } },
+        { id: "propL", type: "PROPELLER", x: 520, y: 400, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "npnL", type: "NPN", x: 380, y: 400, rotation: 0, props: { beta: 100 } },
+        { id: "dioL", type: "DIODE", x: 520, y: 340, rotation: 180, props: { forwardVoltage: 0.7, maxCurrent: 5 } },
+        { id: "rbL", type: "RESISTOR", x: 280, y: 380, rotation: 0, props: { resistance: 1000 } },
+        { id: "rgL", type: "RESISTOR", x: 280, y: 420, rotation: 0, props: { resistance: 470 } },
+        { id: "bed", type: "WORK_BED", x: 680, y: 220, rotation: 0, props: {} }
       ],
       wires: [
         { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "gyro", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w2", from: { compId: "bat", termIdx: 0 }, to: { compId: "plc1", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w3", from: { compId: "bat", termIdx: 0 }, to: { compId: "plc2", termIdx: 0 }, props: { maxCurrent: 10 } },
         { id: "w4", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
         { id: "w5", from: { compId: "gyro", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w6", from: { compId: "plc1", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w7", from: { compId: "plc2", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w8", from: { compId: "propF", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w9", from: { compId: "propB", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w10", from: { compId: "propL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w11", from: { compId: "propR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w12", from: { compId: "gyro", termIdx: 2 }, to: { compId: "plc1", termIdx: 2 }, props: { maxCurrent: 10 } },
-        { id: "w13", from: { compId: "gyro", termIdx: 3 }, to: { compId: "plc1", termIdx: 3 }, props: { maxCurrent: 10 } },
-        { id: "w14", from: { compId: "gyro", termIdx: 4 }, to: { compId: "plc2", termIdx: 2 }, props: { maxCurrent: 10 } },
-        { id: "w15", from: { compId: "gyro", termIdx: 5 }, to: { compId: "plc2", termIdx: 3 }, props: { maxCurrent: 10 } },
-        { id: "w16", from: { compId: "plc1", termIdx: 4 }, to: { compId: "propF", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w17", from: { compId: "plc1", termIdx: 5 }, to: { compId: "propB", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w18", from: { compId: "plc2", termIdx: 4 }, to: { compId: "propR", termIdx: 0 }, props: { maxCurrent: 10 } },
-        { id: "w19", from: { compId: "plc2", termIdx: 5 }, to: { compId: "propL", termIdx: 0 }, props: { maxCurrent: 10 } }
+        { id: "w_vcc_rbF", from: { compId: "bat", termIdx: 0 }, to: { compId: "rbF", termIdx: 0 } },
+        { id: "w_vcc_rbB", from: { compId: "bat", termIdx: 0 }, to: { compId: "rbB", termIdx: 0 } },
+        { id: "w_vcc_rbR", from: { compId: "bat", termIdx: 0 }, to: { compId: "rbR", termIdx: 0 } },
+        { id: "w_vcc_rbL", from: { compId: "bat", termIdx: 0 }, to: { compId: "rbL", termIdx: 0 } },
+        { id: "w_vcc_pF", from: { compId: "bat", termIdx: 0 }, to: { compId: "propF", termIdx: 0 } },
+        { id: "w_vcc_pB", from: { compId: "bat", termIdx: 0 }, to: { compId: "propB", termIdx: 0 } },
+        { id: "w_vcc_pR", from: { compId: "bat", termIdx: 0 }, to: { compId: "propR", termIdx: 0 } },
+        { id: "w_vcc_pL", from: { compId: "bat", termIdx: 0 }, to: { compId: "propL", termIdx: 0 } },
+        { id: "w_vcc_dF", from: { compId: "bat", termIdx: 0 }, to: { compId: "dioF", termIdx: 1 } },
+        { id: "w_vcc_dB", from: { compId: "bat", termIdx: 0 }, to: { compId: "dioB", termIdx: 1 } },
+        { id: "w_vcc_dR", from: { compId: "bat", termIdx: 0 }, to: { compId: "dioR", termIdx: 1 } },
+        { id: "w_vcc_dL", from: { compId: "bat", termIdx: 0 }, to: { compId: "dioL", termIdx: 1 } },
+        { id: "w_gnd_nF", from: { compId: "npnF", termIdx: 2 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w_gnd_nB", from: { compId: "npnB", termIdx: 2 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w_gnd_nR", from: { compId: "npnR", termIdx: 2 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w_gnd_nL", from: { compId: "npnL", termIdx: 2 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w_cF_pF", from: { compId: "npnF", termIdx: 1 }, to: { compId: "propF", termIdx: 1 } },
+        { id: "w_cF_dF", from: { compId: "npnF", termIdx: 1 }, to: { compId: "dioF", termIdx: 0 } },
+        { id: "w_cB_pB", from: { compId: "npnB", termIdx: 1 }, to: { compId: "propB", termIdx: 1 } },
+        { id: "w_cB_dB", from: { compId: "npnB", termIdx: 1 }, to: { compId: "dioB", termIdx: 0 } },
+        { id: "w_cR_pR", from: { compId: "npnR", termIdx: 1 }, to: { compId: "propR", termIdx: 1 } },
+        { id: "w_cR_dR", from: { compId: "npnR", termIdx: 1 }, to: { compId: "dioR", termIdx: 0 } },
+        { id: "w_cL_pL", from: { compId: "npnL", termIdx: 1 }, to: { compId: "propL", termIdx: 1 } },
+        { id: "w_cL_dL", from: { compId: "npnL", termIdx: 1 }, to: { compId: "dioL", termIdx: 0 } },
+        { id: "w_bF_rbF", from: { compId: "npnF", termIdx: 0 }, to: { compId: "rbF", termIdx: 1 } },
+        { id: "w_bF_rgF", from: { compId: "npnF", termIdx: 0 }, to: { compId: "rgF", termIdx: 1 } },
+        { id: "w_bB_rbB", from: { compId: "npnB", termIdx: 0 }, to: { compId: "rbB", termIdx: 1 } },
+        { id: "w_bB_rgB", from: { compId: "npnB", termIdx: 0 }, to: { compId: "rgB", termIdx: 1 } },
+        { id: "w_bR_rbR", from: { compId: "npnR", termIdx: 0 }, to: { compId: "rbR", termIdx: 1 } },
+        { id: "w_bR_rgR", from: { compId: "npnR", termIdx: 0 }, to: { compId: "rgR", termIdx: 1 } },
+        { id: "w_bL_rbL", from: { compId: "npnL", termIdx: 0 }, to: { compId: "rbL", termIdx: 1 } },
+        { id: "w_bL_rgL", from: { compId: "npnL", termIdx: 0 }, to: { compId: "rgL", termIdx: 1 } },
+        { id: "w_gXp_rgF", from: { compId: "gyro", termIdx: 2 }, to: { compId: "rgF", termIdx: 0 } },
+        { id: "w_gXn_rgB", from: { compId: "gyro", termIdx: 3 }, to: { compId: "rgB", termIdx: 0 } },
+        { id: "w_gYp_rgR", from: { compId: "gyro", termIdx: 4 }, to: { compId: "rgR", termIdx: 0 } },
+        { id: "w_gYn_rgL", from: { compId: "gyro", termIdx: 5 }, to: { compId: "rgL", termIdx: 0 } }
       ],
       servoConfig: {
         "gyro": { offsetX: 0, offsetY: 2, offsetZ: 0, parentId: null },
@@ -3306,8 +3340,11 @@ const App = () => {
                     {/* Damage Indicator */}
                     {isBurned && (
                       <g transform="translate(40, 0)" className="pointer-events-none">
-                         <text y="0" textAnchor="middle" fontSize="9" fill="#ff003c" className="font-bold cyber-text cyber-glow animate-pulse uppercase tracking-widest">
+                         <text y="-5" textAnchor="middle" fontSize="9" fill="#ff003c" className="font-bold cyber-text cyber-glow animate-pulse uppercase tracking-widest">
                            ⚠️ OVERLOAD
+                         </text>
+                         <text y="5" textAnchor="middle" fontSize="5" fill="#ff003c" className="font-bold cyber-text cyber-glow uppercase tracking-widest">
+                           {typeof burnedStatesRef.current[comp.id] === 'string' ? burnedStatesRef.current[comp.id] : 'LIMIT EXCEEDED'}
                          </text>
                       </g>
                     )}
@@ -3407,6 +3444,7 @@ const App = () => {
               setNodeConfig={setServoConfig}
               onUpdateProp={(id, key, val) => setComponents(prev => prev.map(c => c.id === id ? { ...c, props: { ...c.props, [key]: val } } : c))}
               isEditMode={isEditMode}
+              burnedNodes={burnedStatesRef.current}
             />
           </div>
         )}

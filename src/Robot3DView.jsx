@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges } from '@react-three/drei';
 
-const ServoNode = ({ node, config, angle = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const hornRef = useRef(null);
   const groupRef = useRef(null);
   const axis = config?.axis || 'Y';
@@ -37,7 +37,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isEditMode, onSelect, 
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#3a3a4f"} roughness={0.7} metalness={0.2} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} roughness={0.7} metalness={0.2} />
         <Edges color="black" />
         {/* Small detail/accent to see orientation */}
         <DreiBox args={[1.25, 0.2, 0.2]} position={[0, 0.4, 0.6]}>
@@ -50,7 +50,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isEditMode, onSelect, 
         <Html position={[0, 1.5, 0]} center>
           <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
             ID: {node.id.slice(0,4)}<br/>
-            POS: {Math.round(angle)}°
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : `POS: ${Math.round(angle)}°`}
           </div>
         </Html>
       )}
@@ -100,7 +100,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isEditMode, onSelect, 
   );
 };
 
-const PotentiometerNode = ({ node, config, position = 0, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const PotentiometerNode = ({ node, config, position = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -116,7 +116,7 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, isEditMode,
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#3a3a4f"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} />
         <Edges color="black" />
       </DreiBox>
 
@@ -135,12 +135,21 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, isEditMode,
       {isSelected && (
         <Html position={[0, 1.5, 0]} center>
           <div className="bg-black/90 text-yellow-400 p-1 rounded border border-yellow-500 text-[10px] font-mono whitespace-nowrap pointer-events-auto flex items-center gap-2 shadow-[0_0_10px_rgba(250,204,21,0.5)]">
-            <button onClick={(e) => { e.stopPropagation(); onUpdateProp(node.id, 'position', Math.max(0, position - 5)); }} className="bg-yellow-900/50 hover:bg-yellow-700/50 px-1.5 py-0.5 rounded cursor-pointer">-</button>
-            <div className="text-center w-12 pointer-events-none">
-                {node.id.slice(0,4)}<br/>
-                {Math.round(position)}%
-            </div>
-            <button onClick={(e) => { e.stopPropagation(); onUpdateProp(node.id, 'position', Math.min(100, position + 5)); }} className="bg-yellow-900/50 hover:bg-yellow-700/50 px-1.5 py-0.5 rounded cursor-pointer">+</button>
+            {isBurned ? (
+              <div className="text-center px-2 py-1 pointer-events-none flex flex-col items-center">
+                 {node.id.slice(0,4)}<br/>
+                 <div className="text-red-500 font-bold animate-pulse leading-tight mt-1">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div>
+              </div>
+            ) : (
+              <>
+                <button onClick={(e) => { e.stopPropagation(); onUpdateProp(node.id, 'position', Math.max(0, position - 5)); }} className="bg-yellow-900/50 hover:bg-yellow-700/50 px-1.5 py-0.5 rounded cursor-pointer">-</button>
+                <div className="text-center w-12 pointer-events-none">
+                    {node.id.slice(0,4)}<br/>
+                    {Math.round(position)}%
+                </div>
+                <button onClick={(e) => { e.stopPropagation(); onUpdateProp(node.id, 'position', Math.min(100, position + 5)); }} className="bg-yellow-900/50 hover:bg-yellow-700/50 px-1.5 py-0.5 rounded cursor-pointer">+</button>
+              </>
+            )}
           </div>
         </Html>
       )}
@@ -159,7 +168,7 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, isEditMode,
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const ButtonNode = ({ node, config, isPressed = false, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const ButtonNode = ({ node, config, isPressed = false, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -171,7 +180,7 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, isEditMode, o
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#3a3a4f"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} />
         <Edges color="black" />
       </DreiBox>
 
@@ -191,7 +200,7 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, isEditMode, o
         <Html position={[0, 1.2, 0]} center>
           <div className="bg-black/90 text-pink-400 px-2 py-1 rounded border border-pink-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(255,0,60,0.5)]">
             ID: {node.id.slice(0,4)}<br/>
-            {isPressed ? "PRESSED" : "RELEASED"}
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isPressed ? "PRESSED" : "RELEASED")}
           </div>
         </Html>
       )}
@@ -210,7 +219,7 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, isEditMode, o
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const SwitchNode = ({ node, config, isOpen = true, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const SwitchNode = ({ node, config, isOpen = true, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -222,7 +231,7 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, isEditMode, onSel
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#3a3a4f"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} />
         <Edges color="black" />
       </DreiBox>
 
@@ -242,7 +251,7 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, isEditMode, onSel
         <Html position={[0, 1.2, 0]} center>
           <div className="bg-black/90 text-green-400 px-2 py-1 rounded border border-green-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(57,255,20,0.5)]">
             ID: {node.id.slice(0,4)}<br/>
-            {isOpen ? "OPEN" : "CLOSED"}
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isOpen ? "OPEN" : "CLOSED")}
           </div>
         </Html>
       )}
@@ -261,7 +270,7 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, isEditMode, onSel
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -279,7 +288,7 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isEditMode,
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#2a2a35"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#2a2a35")} />
         <Edges color="black" />
       </DreiBox>
 
@@ -298,7 +307,7 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isEditMode,
         <Html position={[0, 1.0, 0]} center>
           <div className="bg-black/90 text-red-400 px-2 py-1 rounded border border-red-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(255,0,60,0.5)]">
             ID: {node.id.slice(0,4)}<br/>
-            7-SEG DISPLAY
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : "7-SEG DISPLAY"}
           </div>
         </Html>
       )}
@@ -317,7 +326,7 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isEditMode,
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -330,7 +339,7 @@ const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditM
           onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
           onPointerOut={() => { document.body.style.cursor = 'auto'; }}
         >
-          <meshStandardMaterial color={isSelected ? "#0088aa" : "#1e3a8a"} />
+          <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#1e3a8a")} />
           <Edges color="black" />
         </Cylinder>
         {/* Shield */}
@@ -350,7 +359,7 @@ const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditM
         <Html position={[0, 1.2, 0]} center>
           <div className="bg-black/90 text-orange-400 px-2 py-1 rounded border border-orange-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(255,140,0,0.5)]">
             ID: {node.id.slice(0,4)}<br/>
-            {isHeated ? "HEATING" : "COLD"}
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isHeated ? "HEATING" : "COLD")}
           </div>
         </Html>
       )}
@@ -368,7 +377,7 @@ const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditM
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const MotorNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const shaftRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
@@ -386,7 +395,7 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, 
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#eab308"} metalness={0.5} roughness={0.3} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} metalness={0.5} roughness={0.3} />
         <Edges color="black" />
       </Cylinder>
       <Cylinder ref={shaftRef} args={[0.08, 0.08, 0.3, 16]} position={[0, 0.95, 0]}>
@@ -396,7 +405,7 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, 
         <Html position={[0, 1.3, 0]} center>
           <div className="bg-black/90 text-yellow-400 px-2 py-1 rounded border border-yellow-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(250,204,21,0.5)]">
             MOTOR<br/>
-            {Math.abs(speed) > 0.01 ? 'RUNNING' : 'STOPPED'}
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (Math.abs(speed) > 0.01 ? 'RUNNING' : 'STOPPED')}
           </div>
         </Html>
       )}
@@ -410,7 +419,7 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, 
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const PropellerNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const propRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
@@ -428,7 +437,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isEditMode, onSele
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#475569"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#475569")} />
         <Edges color="black" />
       </Cylinder>
       <group ref={propRef} position={[0, 0.45, 0]}>
@@ -440,7 +449,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isEditMode, onSele
         <Html position={[0, 1.0, 0]} center>
           <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
             PROPELLER<br/>
-            {Math.abs(speed) > 0.01 ? 'SPINNING' : 'STOPPED'}
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (Math.abs(speed) > 0.01 ? 'SPINNING' : 'STOPPED')}
           </div>
         </Html>
       )}
@@ -454,7 +463,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isEditMode, onSele
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
   const pRad = pitch * (Math.PI / 180);
@@ -467,7 +476,7 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isEditMo
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <meshStandardMaterial color={isSelected ? "#0088aa" : "#8b5cf6"} />
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#8b5cf6")} />
         <Edges color="black" />
       </DreiBox>
       <DreiBox args={[0.4, 0.2, 0.4]} position={[0, 0.25, 0]}>
@@ -477,9 +486,15 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isEditMo
         <Html position={[0, 1.2, 0]} center>
           <div className="bg-black/90 text-purple-400 p-2 rounded border border-purple-500 text-[10px] font-mono pointer-events-auto shadow-[0_0_10px_rgba(139,92,246,0.5)] flex flex-col gap-2 w-36">
             <div className="text-center font-bold">GYRO TILT</div>
-            <div className="flex items-center gap-1 justify-between"><span>Pitch:</span> <input type="range" min="-45" max="45" step="1" value={pitch} onChange={(e) => onUpdateProp(node.id, 'pitch', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(pitch)}°</span></div>
-            <div className="flex items-center gap-1 justify-between"><span>Roll:</span> <input type="range" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(node.id, 'roll', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(roll)}°</span></div>
-            <button onClick={() => { onUpdateProp(node.id, 'pitch', 0); onUpdateProp(node.id, 'roll', 0); }} className="bg-purple-900/50 hover:bg-purple-700/50 py-0.5 rounded transition-colors w-full mt-1">Reset Level</button>
+            {isBurned ? (
+               <div className="text-center font-bold text-red-500 animate-pulse mt-1 mb-1 leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div>
+            ) : (
+               <>
+                 <div className="flex items-center gap-1 justify-between"><span>Pitch:</span> <input type="range" min="-45" max="45" step="1" value={pitch} onChange={(e) => onUpdateProp(node.id, 'pitch', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(pitch)}°</span></div>
+                 <div className="flex items-center gap-1 justify-between"><span>Roll:</span> <input type="range" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(node.id, 'roll', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(roll)}°</span></div>
+                 <button onClick={() => { onUpdateProp(node.id, 'pitch', 0); onUpdateProp(node.id, 'roll', 0); }} className="bg-purple-900/50 hover:bg-purple-700/50 py-0.5 rounded transition-colors w-full mt-1">Reset Level</button>
+               </>
+            )}
           </div>
         </Html>
       )}
@@ -521,7 +536,7 @@ const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateO
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode }) {
+export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
   const checkCycle = (id, targetParentId) => {

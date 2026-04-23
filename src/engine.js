@@ -113,7 +113,6 @@ export function simulateTick({
   if (!prevState.plcData) prevState.plcData = {};
   if (!prevState.shiftRegisterData) prevState.shiftRegisterData = {};
   if (!prevState.latchData) prevState.latchData = {};
-  if (!prevState.motorAngles) prevState.motorAngles = {};
 
   expandedComponents.forEach(vc => {
     if (vc.type === 'RAM') {
@@ -291,8 +290,8 @@ export function simulateTick({
         } else if (wave === 'SAW') V += amp * (2 * phase - 1);
         
         vSources.push({ nPos: n0, nNeg: n1, V: V, Rs: 0.01, id: vc.id });
-      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR' || vc.type === 'SOLDERING_IRON') {
-        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' ? 10 : (vc.type === 'SOLDERING_IRON' ? 50 : 1000));
+      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR' || vc.type === 'PROPELLER') {
+        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' || vc.type === 'PROPELLER' ? 10 : 1000);
         resistors.push({ n1: n0, n2: n1, R: Math.max(1e-3, rVal), id: vc.id });
       } else if (vc.type === 'CAPACITOR') {
         const C = Math.max(1e-12, vc.props.capacitance !== undefined ? vc.props.capacitance : 0.0001);
@@ -446,6 +445,27 @@ export function simulateTick({
 
         vSources.push({ nPos: nOut0, nNeg: nGnd, V: vOut0Target, Rs: 50, id: vc.id + "_OUT0" });
         vSources.push({ nPos: nOut1, nNeg: nGnd, V: vOut1Target, Rs: 50, id: vc.id + "_OUT1" });
+      } else if (vc.type === 'GYROSCOPE') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nXp = tNodes[vc.virtualTerminals[2]];
+        const nXn = tNodes[vc.virtualTerminals[3]];
+        const nYp = tNodes[vc.virtualTerminals[4]];
+        const nYn = tNodes[vc.virtualTerminals[5]];
+
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 10000, id: vc.id + "_VCC" });
+
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const outV = vVcc > 0 ? vVcc : 5;
+
+        const pitch = vc.props.pitch || 0;
+        const roll = vc.props.roll || 0;
+        const threshold = 5;
+
+        if(nXp !== undefined && nGnd !== undefined) vSources.push({ nPos: nXp, nNeg: nGnd, V: pitch > threshold ? outV : 0, Rs: 50, id: vc.id + "_XP" });
+        if(nXn !== undefined && nGnd !== undefined) vSources.push({ nPos: nXn, nNeg: nGnd, V: pitch < -threshold ? outV : 0, Rs: 50, id: vc.id + "_XN" });
+        if(nYp !== undefined && nGnd !== undefined) vSources.push({ nPos: nYp, nNeg: nGnd, V: roll > threshold ? outV : 0, Rs: 50, id: vc.id + "_YP" });
+        if(nYn !== undefined && nGnd !== undefined) vSources.push({ nPos: nYn, nNeg: nGnd, V: roll < -threshold ? outV : 0, Rs: 50, id: vc.id + "_YN" });
       } else if (vc.type === 'SHIFT_REGISTER') {
         const nVcc = tNodes[vc.virtualTerminals[0]];
         const nGnd = tNodes[vc.virtualTerminals[1]];
@@ -876,6 +896,16 @@ export function simulateTick({
           branchCurrentsMap[`${vc.id}_OUT1`] = iOut1;
           branchCurrentsMap[vc.id] = Math.max(Math.abs(iOut0), Math.abs(iOut1));
           if (Math.abs(iOut0) > 1e-5 || Math.abs(iOut1) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'GYROSCOPE') {
+          let totalCurrent = 0;
+          ["_XP", "_XN", "_YP", "_YN"].forEach(suf => {
+             const vIdx = vSources.findIndex(vs => vs.id === vc.id + suf);
+             const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+             branchCurrentsMap[vc.id + suf] = iOut;
+             totalCurrent += Math.abs(iOut);
+          });
+          branchCurrentsMap[vc.id] = totalCurrent;
+          if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         }
       });
 
@@ -940,7 +970,7 @@ export function simulateTick({
       const maxP = c.props?.maxPower !== undefined ? c.props.maxPower : 0.25;
       const maxI = c.props?.maxCurrent !== undefined ? c.props.maxCurrent : 1.0;
       const maxV = c.props?.maxVoltage !== undefined ? c.props.maxVoltage : 25.0;
-      const rBase = Math.max(1e-3, c.props?.resistance !== undefined ? c.props.resistance : (type === 'MOTOR' ? 10 : 1000));
+      const rBase = Math.max(1e-3, c.props?.resistance !== undefined ? c.props.resistance : (type === 'MOTOR' || type === 'PROPELLER' ? 10 : 1000));
       
       if (type === 'RESISTOR') isBurned = (current * current * rBase) > maxP;
       else if (type === 'LED' || type === 'DIODE') isBurned = Math.abs(current) > maxI;
@@ -953,7 +983,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'SOLDERING_IRON'].includes(type)) {
+      else if (['MOTOR', 'PROPELLER', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {
@@ -974,20 +1004,6 @@ export function simulateTick({
     }
   });
 
-  validComponents.forEach(c => {
-    if (c.type === 'MOTOR') {
-       if (prevState.motorAngles[c.id] === undefined) prevState.motorAngles[c.id] = 0;
-       const current = branchCurrentsMap[c.id] || 0;
-       if (Math.abs(current) > 1e-3 && !burnedStates[c.id]) {
-           const motorSpeed = Math.max(0.2, 1 / Math.max(0.01, Math.abs(current)));
-           const rpm = 60 / motorSpeed;
-           const dir = current < 0 ? -1 : 1;
-           prevState.motorAngles[c.id] = (prevState.motorAngles[c.id] + dir * rpm * 6 * dt) % 360;
-           if (prevState.motorAngles[c.id] < 0) prevState.motorAngles[c.id] += 360;
-       }
-    }
-  });
-
   return { 
     voltages: nodeVoltagesMap, 
     currents: branchCurrentsMap, 
@@ -998,7 +1014,6 @@ export function simulateTick({
     plcData: prevState.plcData || {},
     shiftRegisterData: prevState.shiftRegisterData || {},
     latchData: prevState.latchData || {},
-    sevenSegmentData: prevState.sevenSegmentData || {},
-    motorAngles: prevState.motorAngles || {}
+    sevenSegmentData: prevState.sevenSegmentData || {}
   };
 }

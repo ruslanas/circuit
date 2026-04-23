@@ -287,6 +287,21 @@ const CustomComponentIcon = ({ size, className, style }) => (
   </svg>
 );
 
+const PropellerSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 10 L16 4 L14 12 L20 16 L12 14 L8 20 L10 12 L4 8 Z" fill="currentColor" fillOpacity="0.3" />
+  </svg>
+);
+
+const GyroscopeSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <circle cx="12" cy="12" r="5" />
+    <path d="M12 2v5 M12 17v5 M2 12h5 M17 12h5" />
+  </svg>
+);
+
 const GroundSymbol = ({ size, className, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
     <line x1="12" y1="4" x2="12" y2="12" />
@@ -530,11 +545,27 @@ Example: (I0 AND NOT I1) OR I1`,
     terminals: [{ x: 0, y: 30, type: 'anode' }, { x: 80, y: 30, type: 'cathode' }],
     defaultProps: { forwardVoltage: 2, color: '#00f0ff', maxCurrent: 0.04 }
   },
+  GYROSCOPE: {
+    id: 'GYROSCOPE', name: 'Gyroscope', desc: 'Detects pitch & roll tilt angles. Outputs HIGH (+V) on axis pins when tilted > 5°.',
+    icon: GyroscopeSymbol, color: '#8b5cf6',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 20, type: 'x+' }, { x: 0, y: 40, type: 'x-' },
+      { x: 80, y: 20, type: 'y+' }, { x: 80, y: 40, type: 'y-' }
+    ],
+    defaultProps: { pitch: 0, roll: 0, maxVoltage: 24, maxCurrent: 0.1 }
+  },
   MOTOR: {
     id: 'MOTOR', name: 'DC Motor', desc: 'Converts electricity to rotation.',
     icon: MotorSymbol, color: '#facc15',
     terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
     defaultProps: { resistance: 10, maxCurrent: 3 }
+  },
+  PROPELLER: {
+    id: 'PROPELLER', name: 'Propeller', desc: 'DC powered fan/propeller providing thrust.',
+    icon: PropellerSymbol, color: '#00f0ff',
+    terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
+    defaultProps: { resistance: 5, maxCurrent: 5 }
   },
   SERVO: {
     id: 'SERVO', name: 'Servo Motor', desc: 'Rotates to an angle based on SIG voltage (0-5V).',
@@ -559,8 +590,8 @@ Example: (I0 AND NOT I1) OR I1`,
 const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
-  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD'],
-  'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED']
+  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED']
 };
 
 // Map compound devices to base physical components
@@ -628,8 +659,9 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'AC_SOURCE') return `${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')}`;
   if (comp.type === 'PWM') return `${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')} ${Number(comp.props.dutyCycle).toFixed(0)}%`;
   if (comp.type === 'OSCILLATOR') return `${comp.props.waveform} ${formatUnit(comp.props.voltage, 'V')} ${formatUnit(comp.props.frequency, 'Hz')}`;
-  if (comp.type === 'RESISTOR' || comp.type === 'MOTOR') return formatUnit(comp.props.resistance, 'Ω');
+  if (comp.type === 'RESISTOR' || comp.type === 'MOTOR' || comp.type === 'PROPELLER') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'CAPACITOR') return formatUnit(comp.props.capacitance, 'F');
+  if (comp.type === 'GYROSCOPE') return `P:${comp.props.pitch || 0}° R:${comp.props.roll || 0}°`;
   if (comp.type === 'INDUCTOR') return formatUnit(comp.props.inductance, 'H');
   if (comp.type === 'TIMER555') return 'NE555';
   if (comp.type === 'RAM') return '4x1 RAM';
@@ -1181,6 +1213,52 @@ const EXAMPLES = [
         "srv3": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv2" },
         "iron": { offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv3" },
         "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 3, parentId: null }
+      }
+    }
+  },
+  {
+    name: "Quadrocopter Auto-Leveling",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 5, maxCurrent: 10 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 260, rotation: 0, props: {} },
+        { id: "gyro", type: "GYROSCOPE", x: 200, y: 160, rotation: 0, props: { pitch: 0, roll: 0, maxCurrent: 2 } },
+        { id: "plc1", type: "PLC", x: 360, y: 100, rotation: 0, props: { prog0: "I0", prog1: "I1", maxCurrent: 5 } },
+        { id: "plc2", type: "PLC", x: 360, y: 220, rotation: 0, props: { prog0: "I0", prog1: "I1", maxCurrent: 5 } },
+        { id: "propF", type: "PROPELLER", x: 520, y: 40, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "propB", type: "PROPELLER", x: 520, y: 120, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "propR", type: "PROPELLER", x: 520, y: 200, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "propL", type: "PROPELLER", x: 520, y: 280, rotation: 0, props: { resistance: 5, maxCurrent: 5 } },
+        { id: "bed", type: "WORK_BED", x: 680, y: 160, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "gyro", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w2", from: { compId: "bat", termIdx: 0 }, to: { compId: "plc1", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w3", from: { compId: "bat", termIdx: 0 }, to: { compId: "plc2", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w4", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w5", from: { compId: "gyro", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w6", from: { compId: "plc1", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w7", from: { compId: "plc2", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w8", from: { compId: "propF", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w9", from: { compId: "propB", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w10", from: { compId: "propL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w11", from: { compId: "propR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w12", from: { compId: "gyro", termIdx: 2 }, to: { compId: "plc1", termIdx: 2 }, props: { maxCurrent: 10 } },
+        { id: "w13", from: { compId: "gyro", termIdx: 3 }, to: { compId: "plc1", termIdx: 3 }, props: { maxCurrent: 10 } },
+        { id: "w14", from: { compId: "gyro", termIdx: 4 }, to: { compId: "plc2", termIdx: 2 }, props: { maxCurrent: 10 } },
+        { id: "w15", from: { compId: "gyro", termIdx: 5 }, to: { compId: "plc2", termIdx: 3 }, props: { maxCurrent: 10 } },
+        { id: "w16", from: { compId: "plc1", termIdx: 4 }, to: { compId: "propF", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w17", from: { compId: "plc1", termIdx: 5 }, to: { compId: "propB", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w18", from: { compId: "plc2", termIdx: 4 }, to: { compId: "propR", termIdx: 0 }, props: { maxCurrent: 10 } },
+        { id: "w19", from: { compId: "plc2", termIdx: 5 }, to: { compId: "propL", termIdx: 0 }, props: { maxCurrent: 10 } }
+      ],
+      servoConfig: {
+        "gyro": { offsetX: 0, offsetY: 2, offsetZ: 0, parentId: null },
+        "propF": { offsetX: 0, offsetY: 0, offsetZ: -2, parentId: "gyro" },
+        "propB": { offsetX: 0, offsetY: 0, offsetZ: 2, parentId: "gyro" },
+        "propL": { offsetX: -2, offsetY: 0, offsetZ: 0, parentId: "gyro" },
+        "propR": { offsetX: 2, offsetY: 0, offsetZ: 0, parentId: "gyro" },
+        "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 0, parentId: null }
       }
     }
   }
@@ -2559,7 +2637,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2588,6 +2666,10 @@ const App = () => {
         nodeValues[comp.id] = simData.sevenSegmentData?.[comp.id] || {};
       } else if (comp.type === 'SOLDERING_IRON') {
         nodeValues[comp.id] = isSimulating && simData.active[comp.id];
+      } else if (comp.type === 'MOTOR' || comp.type === 'PROPELLER') {
+        nodeValues[comp.id] = isSimulating && simData.active[comp.id] && !burnedStatesRef.current[comp.id] ? simData.currents[comp.id] || 0 : 0;
+      } else if (comp.type === 'GYROSCOPE') {
+        nodeValues[comp.id] = { pitch: comp.props.pitch || 0, roll: comp.props.roll || 0 };
       }
     });
   }
@@ -3098,14 +3180,14 @@ const App = () => {
                 else if (comp.type === 'OPAMP' || comp.type === 'COMPARATOR') current = simData.currents[`${comp.id}_OUT`] || 0;
                 else if (comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT0`] || 0), Math.abs(simData.currents[`${comp.id}_OUT1`] || 0));
                 else if (comp.type === 'SEVEN_SEGMENT') current = simData.currents[comp.id] || 0;
-                else if (comp.type === 'PLC') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT0`] || 0), Math.abs(simData.currents[`${comp.id}_OUT1`] || 0));
+                else if (comp.type === 'GYROSCOPE') current = simData.currents[comp.id] || 0;
                 else current = simData.currents[comp.id] || 0;
                 
                 // Check Damage/Burn Limits
                 const isBurned = isSimulating && burnedStatesRef.current[comp.id];
                 
                 const isLit = comp.type === 'LED' && isSimulating && simData.active[comp.id] && !isBurned;
-                const isMotorRunning = comp.type === 'MOTOR' && isSimulating && simData.active[comp.id] && !isBurned;
+                const isMotorRunning = (comp.type === 'MOTOR' || comp.type === 'PROPELLER') && isSimulating && simData.active[comp.id] && !isBurned;
                 const motorSpeed = isMotorRunning ? Math.max(0.2, 1 / Math.max(0.01, Math.abs(current))) : 0;
                 const motorDir = current < -1e-3 ? 'reverse' : 'normal';
                 const rpm = isMotorRunning ? Math.round(60 / motorSpeed) : 0;
@@ -3203,7 +3285,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT' || comp.type === 'CCD') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT' || comp.type === 'CCD' || comp.type === 'GYROSCOPE') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -3243,7 +3325,7 @@ const App = () => {
                           {formatUnit(current, 'A')}
                         </text>
                       )}
-                      {comp.type === 'MOTOR' && isSimulating && simData.active[comp.id] && !isBurned && (
+                      {(comp.type === 'MOTOR' || comp.type === 'PROPELLER') && isSimulating && simData.active[comp.id] && !isBurned && (
                         <text y="24" textAnchor="middle" fontSize="6" fill={compColor} className="font-mono pointer-events-none cyber-glow">
                           {rpm} RPM
                         </text>
@@ -3319,7 +3401,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3596,6 +3678,11 @@ const App = () => {
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_gnd</span> <span className="font-mono text-cyan-300">{formatUnit(simData.voltages[`${comp.id}-7`]||0, 'V')}</span></div>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">ON</span> <span className="font-mono text-cyan-300">{(Object.keys(simData.sevenSegmentData?.[comp.id] || {}).filter(k => simData.sevenSegmentData[comp.id][k]).join('') || '-').toUpperCase()}</span></div>
                                   <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_total</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
+                                </>
+                              ) : comp.type === 'GYROSCOPE' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">X_out (±)</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0)-(simData.voltages[`${comp.id}-1`]||0), 'V')} / {formatUnit((simData.voltages[`${comp.id}-3`]||0)-(simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">Y_out (±)</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-4`]||0)-(simData.voltages[`${comp.id}-1`]||0), 'V')} / {formatUnit((simData.voltages[`${comp.id}-5`]||0)-(simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 </>
                               ) : comp.type === 'TRANSFORMER' ? (
                                 <>

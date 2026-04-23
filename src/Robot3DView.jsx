@@ -368,6 +368,134 @@ const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditM
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
+const MotorNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const shaftRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  useFrame((state, delta) => {
+     if (shaftRef.current && speed !== 0) {
+         shaftRef.current.rotation.y += speed * delta * 25;
+     }
+  });
+
+  const content = (
+    <>
+      <Cylinder args={[0.3, 0.3, 0.8, 16]} position={[0, 0.4, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isSelected ? "#0088aa" : "#eab308"} metalness={0.5} roughness={0.3} />
+        <Edges color="black" />
+      </Cylinder>
+      <Cylinder ref={shaftRef} args={[0.08, 0.08, 0.3, 16]} position={[0, 0.95, 0]}>
+        <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
+      </Cylinder>
+      {isSelected && (
+        <Html position={[0, 1.3, 0]} center>
+          <div className="bg-black/90 text-yellow-400 px-2 py-1 rounded border border-yellow-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+            MOTOR<br/>
+            {Math.abs(speed) > 0.01 ? 'RUNNING' : 'STOPPED'}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 1.0, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
+const PropellerNode = ({ node, config, speed = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const propRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  useFrame((state, delta) => {
+     if (propRef.current && speed !== 0) {
+         propRef.current.rotation.y += speed * delta * 25;
+     }
+  });
+
+  const content = (
+    <>
+      <Cylinder args={[0.2, 0.2, 0.4, 16]} position={[0, 0.2, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isSelected ? "#0088aa" : "#475569"} />
+        <Edges color="black" />
+      </Cylinder>
+      <group ref={propRef} position={[0, 0.45, 0]}>
+         <Cylinder args={[0.08, 0.08, 0.15, 8]}><meshStandardMaterial color="#94a3b8" /></Cylinder>
+         <DreiBox args={[1.8, 0.02, 0.2]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+         <DreiBox args={[0.2, 0.02, 1.8]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.0, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            PROPELLER<br/>
+            {Math.abs(speed) > 0.01 ? 'SPINNING' : 'STOPPED'}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.6, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
+const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const pRad = pitch * (Math.PI / 180);
+  const rRad = roll * (Math.PI / 180);
+
+  const content = (
+    <>
+      <DreiBox args={[1.0, 0.2, 1.0]} position={[0, 0.1, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isSelected ? "#0088aa" : "#8b5cf6"} />
+        <Edges color="black" />
+      </DreiBox>
+      <DreiBox args={[0.4, 0.2, 0.4]} position={[0, 0.25, 0]}>
+        <meshStandardMaterial color="#1e293b" />
+      </DreiBox>
+      {isSelected && (
+        <Html position={[0, 1.2, 0]} center>
+          <div className="bg-black/90 text-purple-400 p-2 rounded border border-purple-500 text-[10px] font-mono pointer-events-auto shadow-[0_0_10px_rgba(139,92,246,0.5)] flex flex-col gap-2 w-36">
+            <div className="text-center font-bold">GYRO TILT</div>
+            <div className="flex items-center gap-1 justify-between"><span>Pitch:</span> <input type="range" min="-45" max="45" step="1" value={pitch} onChange={(e) => onUpdateProp(node.id, 'pitch', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(pitch)}°</span></div>
+            <div className="flex items-center gap-1 justify-between"><span>Roll:</span> <input type="range" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(node.id, 'roll', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(roll)}°</span></div>
+            <button onClick={() => { onUpdateProp(node.id, 'pitch', 0); onUpdateProp(node.id, 'roll', 0); }} className="bg-purple-900/50 hover:bg-purple-700/50 py-0.5 rounded transition-colors w-full mt-1">Reset Level</button>
+          </div>
+        </Html>
+      )}
+      {/* Apply rotation to children so any attached drone elements actually tilt! */}
+      <group rotation={[pRad, 0, rRad]} position={[0, 0.35, 0]}>
+         {children}
+      </group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
 const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
@@ -471,6 +599,27 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             <SolderingIronNode key={n.id} node={n} config={cfg} isHeated={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
               {buildTree(n.id)}
             </SolderingIronNode>
+          );
+        }
+        if (n.type === 'MOTOR') {
+          return (
+            <MotorNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </MotorNode>
+          );
+        }
+        if (n.type === 'PROPELLER') {
+          return (
+            <PropellerNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </PropellerNode>
+          );
+        }
+        if (n.type === 'GYROSCOPE') {
+          return (
+            <GyroscopeNode key={n.id} node={n} config={cfg} pitch={val?.pitch} roll={val?.roll} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
+              {buildTree(n.id)}
+            </GyroscopeNode>
           );
         }
         if (n.type === 'WORK_BED') {

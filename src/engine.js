@@ -291,8 +291,8 @@ export function simulateTick({
         } else if (wave === 'SAW') V += amp * (2 * phase - 1);
         
         vSources.push({ nPos: n0, nNeg: n1, V: V, Rs: 0.01, id: vc.id });
-      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR') {
-        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' ? 10 : 1000);
+      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR' || vc.type === 'SOLDERING_IRON') {
+        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' ? 10 : (vc.type === 'SOLDERING_IRON' ? 50 : 1000));
         resistors.push({ n1: n0, n2: n1, R: Math.max(1e-3, rVal), id: vc.id });
       } else if (vc.type === 'CAPACITOR') {
         const C = Math.max(1e-12, vc.props.capacitance !== undefined ? vc.props.capacitance : 0.0001);
@@ -953,7 +953,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         isBurned = Math.abs(current) > maxI;
       }
-      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH'].includes(type)) {
+      else if (['MOTOR', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'SOLDERING_IRON'].includes(type)) {
         isBurned = Math.abs(current) > maxI;
       }
       else if (type === 'CAPACITOR') {

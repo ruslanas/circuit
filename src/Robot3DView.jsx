@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges } from '@react-three/drei';
 
-const ServoNode = ({ node, config, angle = 0, isSelected, onSelect, onUpdateOffset, children }) => {
+const ServoNode = ({ node, config, angle = 0, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
   const hornRef = useRef(null);
   const groupRef = useRef(null);
   const axis = config?.axis || 'Y';
@@ -74,7 +74,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, onSelect, onUpdateOffs
     </>
   );
 
-  if (isSelected) {
+  if (isSelected && isEditMode) {
      return (
        <TransformControls 
          mode="translate" 
@@ -100,7 +100,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, onSelect, onUpdateOffs
   );
 };
 
-const PotentiometerNode = ({ node, config, position = 0, isSelected, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const PotentiometerNode = ({ node, config, position = 0, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -149,7 +149,7 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, onSelect, o
     </>
   );
 
-  if (isSelected) {
+  if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
          <group ref={groupRef} position={offset}>{content}</group>
@@ -159,7 +159,7 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, onSelect, o
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const ButtonNode = ({ node, config, isPressed = false, isSelected, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const ButtonNode = ({ node, config, isPressed = false, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -200,7 +200,7 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, onSelect, onU
     </>
   );
 
-  if (isSelected) {
+  if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
          <group ref={groupRef} position={offset}>{content}</group>
@@ -210,7 +210,7 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, onSelect, onU
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const SwitchNode = ({ node, config, isOpen = true, isSelected, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+const SwitchNode = ({ node, config, isOpen = true, isSelected, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -251,7 +251,7 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, onSelect, onUpdat
     </>
   );
 
-  if (isSelected) {
+  if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
          <group ref={groupRef} position={offset}>{content}</group>
@@ -261,7 +261,7 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, onSelect, onUpdat
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
-const SevenSegmentNode = ({ node, config, segments = {}, isSelected, onSelect, onUpdateOffset, children }) => {
+const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
 
@@ -307,7 +307,7 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, onSelect, o
     </>
   );
 
-  if (isSelected) {
+  if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
          <group ref={groupRef} position={offset}>{content}</group>
@@ -317,8 +317,85 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, onSelect, o
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
+const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <group rotation={[Math.PI / 2, 0, 0]}>
+        {/* Handle */}
+        <Cylinder args={[0.15, 0.15, 0.8, 16]} position={[0, -0.4, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#1e3a8a"} />
+          <Edges color="black" />
+        </Cylinder>
+        {/* Shield */}
+        <Cylinder args={[0.18, 0.18, 0.2, 16]} position={[0, 0.1, 0]}>
+          <meshStandardMaterial color="#0f172a" />
+        </Cylinder>
+        {/* Shaft */}
+        <Cylinder args={[0.05, 0.05, 0.5, 16]} position={[0, 0.45, 0]}>
+          <meshStandardMaterial color="#94a3b8" metalness={0.8} roughness={0.2} />
+        </Cylinder>
+        {/* Iron Tip */}
+        <Cylinder args={[0.01, 0.05, 0.3, 16]} position={[0, 0.85, 0]}>
+          <meshStandardMaterial color={isHeated ? "#ff3333" : "#cbd5e1"} emissive={isHeated ? "#ff0000" : "#000"} emissiveIntensity={isHeated ? 2 : 0} metalness={0.8} roughness={0.2} />
+        </Cylinder>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.2, 0]} center>
+          <div className="bg-black/90 text-orange-400 px-2 py-1 rounded border border-orange-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(255,140,0,0.5)]">
+            ID: {node.id.slice(0,4)}<br/>
+            {isHeated ? "HEATING" : "COLD"}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.85, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return (
+       <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
+         <group ref={groupRef} position={offset}>{content}</group>
+       </TransformControls>
+     );
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
+const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <DreiBox args={[6, 0.2, 6]} position={[0, 0.1, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isSelected ? "#0088aa" : "#1e1e24"} roughness={0.9} />
+        <Edges color="#00f0ff" />
+      </DreiBox>
+      <Grid infiniteGrid={false} position={[0, 0.21, 0]} args={[6, 6]} sectionColor="#555" cellColor="#222" sectionThickness={1} cellThickness={0.5} fadeDistance={10} />
+      <group position={[0, 0.2, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp }) {
   const [selectedNode, setSelectedNode] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   const checkCycle = (id, targetParentId) => {
     let curr = targetParentId;
@@ -357,37 +434,51 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
         
         if (n.type === 'SERVO') {
           return (
-            <ServoNode key={n.id} node={n} config={cfg} angle={val} isSelected={isSelected} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+            <ServoNode key={n.id} node={n} config={cfg} angle={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
               {buildTree(n.id)}
             </ServoNode>
           );
         }
         if (n.type === 'POTENTIOMETER') {
           return (
-            <PotentiometerNode key={n.id} node={n} config={cfg} position={val} isSelected={isSelected} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
+            <PotentiometerNode key={n.id} node={n} config={cfg} position={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
               {buildTree(n.id)}
             </PotentiometerNode>
           );
         }
         if (n.type === 'PUSH_BUTTON') {
           return (
-            <ButtonNode key={n.id} node={n} config={cfg} isPressed={val} isSelected={isSelected} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
+            <ButtonNode key={n.id} node={n} config={cfg} isPressed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
               {buildTree(n.id)}
             </ButtonNode>
           );
         }
         if (n.type === 'SWITCH') {
           return (
-            <SwitchNode key={n.id} node={n} config={cfg} isOpen={val} isSelected={isSelected} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
+            <SwitchNode key={n.id} node={n} config={cfg} isOpen={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
               {buildTree(n.id)}
             </SwitchNode>
           );
         }
         if (n.type === 'SEVEN_SEGMENT') {
           return (
-            <SevenSegmentNode key={n.id} node={n} config={cfg} segments={val} isSelected={isSelected} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+            <SevenSegmentNode key={n.id} node={n} config={cfg} segments={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
               {buildTree(n.id)}
             </SevenSegmentNode>
+          );
+        }
+        if (n.type === 'SOLDERING_IRON') {
+          return (
+            <SolderingIronNode key={n.id} node={n} config={cfg} isHeated={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </SolderingIronNode>
+          );
+        }
+        if (n.type === 'WORK_BED') {
+          return (
+            <WorkBedNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </WorkBedNode>
           );
         }
         return null;
@@ -397,6 +488,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
   return (
     <div className="flex w-full h-full text-cyan-400 font-mono">
       {/* Sidebar for 3D arrangement */}
+      {isEditMode && (
       <div className="w-64 bg-[#0b0b10] border-r border-cyan-900/50 p-4 flex flex-col gap-4 overflow-y-auto hide-scrollbar z-10 shrink-0">
         <h2 className="text-[11px] font-bold cyber-text tracking-widest uppercase border-b border-cyan-900/50 pb-2">Kinematic Linkage</h2>
         {nodes.length === 0 && <p className="text-[10px] text-cyan-600/70">No 3D components in the circuit.</p>}
@@ -433,8 +525,22 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
           );
         })}
       </div>
+      )}
 
       <div className="flex-1 bg-[#050507] relative">
+        {/* Editor Overlay Button */}
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            onClick={() => setIsEditMode(prev => !prev)}
+            className={`px-3 py-1.5 text-[10px] font-bold tracking-widest uppercase rounded-sm border transition-colors shadow-lg ${
+              isEditMode 
+                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300' 
+                : 'bg-black/60 border-cyan-900/50 text-cyan-600 hover:border-cyan-700 hover:text-cyan-400'
+            }`}
+          >
+            {isEditMode ? 'Close Editor' : 'Edit 3D Layout'}
+          </button>
+        </div>
         <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => setSelectedNode(null)}>
           <ambientLight intensity={0.5} /><directionalLight position={[10, 10, 5]} intensity={1.5} /><OrbitControls makeDefault />
           <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="rgba(0,240,255,0.2)" sectionThickness={1} cellThickness={0.5} />

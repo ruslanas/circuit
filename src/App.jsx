@@ -93,6 +93,15 @@ const ShiftRegisterSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const CcdSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <path d="M6 10h3v4H6z M10.5 10h3v4h-3z M15 10h3v4h-3z" fill="currentColor" fillOpacity="0.3" />
+    <text x="12" y="18" textAnchor="middle" fontSize="4.5" fill="currentColor" stroke="none" style={{fontFamily: 'monospace', fontWeight: 'bold'}}>CCD</text>
+    <line x1="3" y1="12" x2="6" y2="12" strokeWidth="1.5" />
+  </svg>
+);
+
 const SevenSegmentSymbol = ({ size, className, style, segments = {} }) => {
   const segs = {
     a: { d: "M9 7 H15", on: segments.a }, b: { d: "M16 8 V12", on: segments.b },
@@ -286,6 +295,24 @@ const GroundSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const SolderingIronSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <line x1="4" y1="20" x2="12" y2="12" />
+    <line x1="12" y1="12" x2="16" y2="8" strokeWidth="4" />
+    <path d="M16 8 L22 2 L18 6 Z" fill="currentColor" stroke="none" />
+    <polygon points="16,8 22,2 18,6" fill="transparent" stroke="currentColor" />
+  </svg>
+);
+
+const BedSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="2" y="14" width="20" height="4" rx="1" />
+    <line x1="4" y1="18" x2="4" y2="22" />
+    <line x1="20" y1="18" x2="20" y2="22" />
+    <path d="M2 14 L6 8 H18 L22 14" strokeDasharray="2 2" />
+  </svg>
+);
+
 const COMPONENT_TYPES = {
   BATTERY: { 
     id: 'BATTERY', name: 'DC Source', desc: 'Provides a constant DC voltage.', 
@@ -365,6 +392,16 @@ const COMPONENT_TYPES = {
       { x: 80, y: 30, type: 'out' }
     ],
     defaultProps: { maxVoltage: 5, maxCurrent: 1 }
+  },
+  CCD: {
+    id: 'CCD', name: 'CCD Delay Line', desc: 'Analog charge-coupled device (Bucket Brigade). Shifts analog voltage on CLK.',
+    icon: CcdSymbol, color: '#b829ea',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' },
+      { x: 0, y: 20, type: 'vin' }, { x: 0, y: 40, type: 'clk' },
+      { x: 80, y: 30, type: 'vout' }
+    ],
+    defaultProps: { maxVoltage: 18, stages: 4 }
   },
   POTENTIOMETER: {
     id: 'POTENTIOMETER', name: 'Potentiometer', desc: 'Adjustable voltage divider.',
@@ -503,14 +540,26 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: ServoSymbol, color: '#facc15',
     terminals: [{ x: 0, y: 20, type: 'vcc' }, { x: 0, y: 30, type: 'sig' }, { x: 0, y: 40, type: 'gnd' }],
     defaultProps: { resistance: 100, sigRes: 1000000, maxCurrent: 1 }
+  },
+  SOLDERING_IRON: {
+    id: 'SOLDERING_IRON', name: 'Soldering Iron', desc: 'Resistive heating element. Gets hot when powered.',
+    icon: SolderingIronSymbol, color: '#ff003c',
+    terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
+    defaultProps: { resistance: 50, maxCurrent: 5, maxPower: 50 }
+  },
+  WORK_BED: {
+    id: 'WORK_BED', name: 'Work Bed', desc: 'Structural platform. No electrical pins.',
+    icon: BedSymbol, color: '#a8a29e',
+    terminals: [],
+    defaultProps: {}
   }
 };
 
 const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
-  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM'],
-  'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT']
+  'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD'],
+  'Outputs': ['LED', 'MOTOR', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED']
 };
 
 // Map compound devices to base physical components
@@ -583,6 +632,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'INDUCTOR') return formatUnit(comp.props.inductance, 'H');
   if (comp.type === 'TIMER555') return 'NE555';
   if (comp.type === 'RAM') return '4x1 RAM';
+  if (comp.type === 'CCD') return `${comp.props.stages || 4}-STAGE`;
   if (comp.type === 'TRANSFORMER') return `${formatUnit(comp.props.primaryL, 'H')}:${formatUnit(comp.props.secondaryL, 'H')}`;
   if (comp.type === 'LED') return `${comp.props.forwardVoltage}V ${comp.props.color}`;
   if (comp.type === 'DIODE') return `${comp.props.forwardVoltage}V`;
@@ -595,6 +645,8 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'SHIFT_REGISTER') return '4-BIT SIPO';
   if (comp.type === 'LATCH') return '4-BIT LATCH';
   if (comp.type === 'SEVEN_SEGMENT') return '7-SEG';
+  if (comp.type === 'SOLDERING_IRON') return formatUnit(comp.props.resistance, 'Ω');
+  if (comp.type === 'WORK_BED') return 'BED';
   return '';
 };
 
@@ -1035,6 +1087,60 @@ const EXAMPLES = [
         "srv3": { axis: "Z", offsetX: 2.5, offsetY: 0, offsetZ: 0, parentId: "srv2" }
       }
     }
+  },
+  {
+    name: "3D Soldering Robot Arm",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 60, rotation: 0, props: { voltage: 5, maxCurrent: 5 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 240, rotation: 0, props: {} },
+        { id: "sw", type: "SWITCH", x: 180, y: 60, rotation: 0, props: { isOpen: false, maxCurrent: 5 } },
+        { id: "iron", type: "SOLDERING_IRON", x: 300, y: 60, rotation: 0, props: { resistance: 10, maxPower: 50, maxCurrent: 5 } },
+        { id: "pot1", type: "POTENTIOMETER", x: 180, y: 140, rotation: 0, props: { resistance: 10000, position: 50, maxPower: 0.25 } },
+        { id: "pot2", type: "POTENTIOMETER", x: 300, y: 140, rotation: 0, props: { resistance: 10000, position: 30, maxPower: 0.25 } },
+        { id: "pot3", type: "POTENTIOMETER", x: 420, y: 140, rotation: 0, props: { resistance: 10000, position: 60, maxPower: 0.25 } },
+        { id: "pot4", type: "POTENTIOMETER", x: 540, y: 140, rotation: 0, props: { resistance: 10000, position: 50, maxPower: 0.25 } },
+        { id: "srv1", type: "SERVO", x: 180, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "srv2", type: "SERVO", x: 300, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "srv3", type: "SERVO", x: 420, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "srv4", type: "SERVO", x: 540, y: 240, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "bed", type: "WORK_BED", x: 660, y: 60, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w2", from: { compId: "sw", termIdx: 1 }, to: { compId: "iron", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w3", from: { compId: "iron", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w4", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w5", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot1", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w6", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot2", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w7", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot3", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w8", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot4", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w9", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv1", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w10", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv2", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w11", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv3", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w12", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv4", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w13", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot1", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w14", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot2", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w15", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot3", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w16", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot4", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w17", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv1", termIdx: 2 }, props: { maxCurrent: 5 } },
+        { id: "w18", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv2", termIdx: 2 }, props: { maxCurrent: 5 } },
+        { id: "w19", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv3", termIdx: 2 }, props: { maxCurrent: 5 } },
+        { id: "w20", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv4", termIdx: 2 }, props: { maxCurrent: 5 } },
+        { id: "w21", from: { compId: "pot1", termIdx: 2 }, to: { compId: "srv1", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w22", from: { compId: "pot2", termIdx: 2 }, to: { compId: "srv2", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w23", from: { compId: "pot3", termIdx: 2 }, to: { compId: "srv3", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w24", from: { compId: "pot4", termIdx: 2 }, to: { compId: "srv4", termIdx: 1 }, props: { maxCurrent: 5 } }
+      ],
+      servoConfig: {
+        "srv1": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null },
+        "srv2": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv1" },
+        "srv3": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv2" },
+        "srv4": { axis: "X", offsetX: 0, offsetY: 1.5, offsetZ: 0, parentId: "srv3" },
+        "iron": { offsetX: 0, offsetY: 1, offsetZ: 0, parentId: "srv4" },
+        "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 3, parentId: null }
+      }
+    }
   }
 ];
 
@@ -1278,6 +1384,10 @@ const App = () => {
         }
         else if (comp.type === 'PLC') {
             val = simData.voltages[`${comp.id}-4`] || 0; // OUT0
+            unit = 'V';
+        }
+        else if (comp.type === 'CCD') {
+            val = simData.voltages[`${comp.id}-4`] || 0; // VOUT
             unit = 'V';
         }
         else if (comp.type === 'SHIFT_REGISTER') {
@@ -2088,6 +2198,7 @@ const App = () => {
         else if (c.type === 'SWITCH') spice += `R${name}_sw ${n0} ${n1} ${c.props.isOpen ? '1G' : '0.001'}\n`;
         else if (c.type === 'PUSH_BUTTON') spice += `R${name}_pb ${n0} ${n1} ${c.props.isPressed ? '0.001' : '1G'}\n`;
         else if (c.type === 'LED') spice += `D${name} ${n0} ${n1} DLED\n`;
+        else if (c.type === 'SOLDERING_IRON') spice += `R${name}_iron ${n0} ${n1} ${Math.max(1e-3, c.props.resistance !== undefined ? c.props.resistance : 50)}\n`;
         else if (c.type === 'DIODE') spice += `D${name} ${n0} ${n1} DGEN\n`;
         else if (c.type === 'POTENTIOMETER') {
             const pos = Math.max(0, Math.min(100, c.props.position || 0)) / 100;
@@ -2132,6 +2243,9 @@ const App = () => {
         else if (c.type === 'RAM') {
             spice += `* RAM component ${name} omitted (digital behavioral block)\n`;
         }
+        else if (c.type === 'CCD') {
+            spice += `* CCD component ${name} omitted (analog behavioral block)\n`;
+        }
         else if (c.type === 'OPAMP') {
             spice += `E${name} ${getNetName(c.id, 2)} 0 ${getNetName(c.id, 0)} ${getNetName(c.id, 1)} ${c.props.gain || 100000}\n`;
         }
@@ -2149,6 +2263,9 @@ const App = () => {
         }
         else if (c.type === 'SEVEN_SEGMENT') {
             spice += `* 7-Segment Display component ${name} omitted (macro block required)\n`;
+        }
+        else if (c.type === 'WORK_BED') {
+            spice += `* Work Bed component ${name} omitted (structural only)\n`;
         }
     });
 
@@ -2382,7 +2499,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2409,6 +2526,8 @@ const App = () => {
         nodeValues[comp.id] = comp.props.isOpen !== undefined ? comp.props.isOpen : true;
       } else if (comp.type === 'SEVEN_SEGMENT') {
         nodeValues[comp.id] = simData.sevenSegmentData?.[comp.id] || {};
+      } else if (comp.type === 'SOLDERING_IRON') {
+        nodeValues[comp.id] = isSimulating && simData.active[comp.id];
       }
     });
   }
@@ -2992,7 +3111,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT' || comp.type === 'CCD') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -3108,7 +3227,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3227,6 +3346,7 @@ const App = () => {
                               if (['resistance', 'pullupRes', 'driveRes', 'inRes', 'sigRes'].includes(key) && (val === '' || val < 0.001)) finalVal = 0.001;
                               if (key === 'beta' && (val === '' || val < 1)) finalVal = 1;
                               if (key === 'capacitance' && (val === '' || val < 1e-12)) finalVal = 1e-12;
+                              if (key === 'stages' && (val === '' || val < 1)) finalVal = 1;
                               if (['inductance', 'primaryL', 'secondaryL'].includes(key) && (val === '' || val < 1e-9)) finalVal = 1e-9;
                               if (key === 'dutyCycle') finalVal = Math.max(0, Math.min(100, val === '' ? 50 : val));
                               if (key === 'frequency' && (val === '' || val <= 0)) finalVal = 1;
@@ -3332,6 +3452,13 @@ const App = () => {
                                       </div>
                                     ))}
                                   </div>
+                                </>
+                              ) : comp.type === 'CCD' ? (
+                                <>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">CLK</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-3`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_in</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                  <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_out</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-4`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 </>
                               ) : comp.type === 'PLC' ? (
                                 <>

@@ -1363,13 +1363,13 @@ const EXAMPLES = [
       ],
       servoConfig: {
         "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
-        "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: -1.5, parentId: "chassis" },
-        "wFL": { offsetX: -1.2, offsetY: 0, offsetZ: 0, parentId: "srv_steer" },
-        "wFR": { offsetX: 1.2, offsetY: 0, offsetZ: 0, parentId: "srv_steer" },
+        "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0.5, offsetZ: -1.5, pitch: 180, parentId: "chassis" },
+        "wFL": { offsetX: -1.2, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
+        "wFR": { offsetX: 1.2, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
         "wBL": { offsetX: -1.2, offsetY: 0, offsetZ: 1.5, parentId: "chassis" },
         "wBR": { "offsetX": 1.2, "offsetY": 0, "offsetZ": 1.5, "parentId": "chassis" },
-        "sw": { "offsetX": 0, "offsetY": 1.15, "offsetZ": -0.2, "parentId": "chassis" },
-        "pot_steer": { "offsetX": 0, "offsetY": 1.15, "offsetZ": 0.5, "parentId": "chassis" }
+        "sw": { "offsetX": 0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
+        "pot_steer": { "offsetX": -0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" }
       }
     }
   }

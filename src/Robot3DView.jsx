@@ -86,7 +86,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, 
            }
          }}
        >
-         <group ref={groupRef} position={offset}>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>
            {content}
          </group>
        </TransformControls>
@@ -94,7 +94,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, 
   }
 
   return (
-    <group ref={groupRef} position={offset}>
+    <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>
       {content}
     </group>
   );
@@ -161,11 +161,11 @@ const PotentiometerNode = ({ node, config, position = 0, isSelected, isBurned, i
   if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
-         <group ref={groupRef} position={offset}>{content}</group>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
        </TransformControls>
      );
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const ButtonNode = ({ node, config, isPressed = false, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
@@ -212,11 +212,11 @@ const ButtonNode = ({ node, config, isPressed = false, isSelected, isBurned, isE
   if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
-         <group ref={groupRef} position={offset}>{content}</group>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
        </TransformControls>
      );
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const SwitchNode = ({ node, config, isOpen = true, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
@@ -263,11 +263,11 @@ const SwitchNode = ({ node, config, isOpen = true, isSelected, isBurned, isEditM
   if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
-         <group ref={groupRef} position={offset}>{content}</group>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
        </TransformControls>
      );
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -319,11 +319,11 @@ const SevenSegmentNode = ({ node, config, segments = {}, isSelected, isBurned, i
   if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
-         <group ref={groupRef} position={offset}>{content}</group>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
        </TransformControls>
      );
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -370,11 +370,11 @@ const SolderingIronNode = ({ node, config, isHeated = false, isSelected, isBurne
   if (isSelected && isEditMode) {
      return (
        <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
-         <group ref={groupRef} position={offset}>{content}</group>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
        </TransformControls>
      );
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -414,9 +414,9 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -458,9 +458,9 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, onUpdateProp, children }) => {
@@ -506,9 +506,9 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -531,9 +531,9 @@ const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateO
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -584,9 +584,9 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -596,7 +596,8 @@ const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpda
   const content = (
     <>
       <group position={[0, 0.25, 0]}>
-        <DreiBox args={[2, 0.5, 4]}
+        {/* Left Rail */}
+        <DreiBox args={[0.5, 0.5, 4]} position={[-0.75, 0, 0]}
           onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
           onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
           onPointerOut={() => { document.body.style.cursor = 'auto'; }}
@@ -604,12 +605,23 @@ const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpda
           <meshStandardMaterial color={isSelected ? "#0088aa" : "#b3002a"} roughness={0.5} metalness={0.3} />
           <Edges color="black" />
         </DreiBox>
-        <DreiBox args={[1.5, 0.6, 2]} position={[0, 0.55, -0.2]}>
-          <meshStandardMaterial color={isSelected ? "#00aacc" : "#ff003c"} roughness={0.5} metalness={0.3} />
+        {/* Right Rail */}
+        <DreiBox args={[0.5, 0.5, 4]} position={[0.75, 0, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#b3002a"} roughness={0.5} metalness={0.3} />
           <Edges color="black" />
         </DreiBox>
-        <DreiBox args={[1.2, 0.3, 0.1]} position={[0, 0, -2.01]}>
-           <meshStandardMaterial color="#111" />
+        {/* Center Crossbar */}
+        <DreiBox args={[1.0, 0.5, 1.5]} position={[0, 0, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#00aacc" : "#ff003c"} roughness={0.5} metalness={0.3} />
+          <Edges color="black" />
         </DreiBox>
       </group>
       {isSelected && (
@@ -624,9 +636,9 @@ const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpda
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset}>{content}</group>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
@@ -780,9 +792,14 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
                 </select>
               </label>
               <div className="grid grid-cols-3 gap-1.5">
-                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset X<input type="number" step="0.5" value={cfg.offsetX || 0} onChange={(e) => updateConfig(n.id, 'offsetX', parseFloat(e.target.value)||0)} className="cyber-input p-1 text-center rounded-sm" /></label>
-                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset Y<input type="number" step="0.5" value={cfg.offsetY || 0} onChange={(e) => updateConfig(n.id, 'offsetY', parseFloat(e.target.value)||0)} className="cyber-input p-1 text-center rounded-sm" /></label>
-                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset Z<input type="number" step="0.5" value={cfg.offsetZ || 0} onChange={(e) => updateConfig(n.id, 'offsetZ', parseFloat(e.target.value)||0)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset X<input type="number" step="0.5" value={cfg.offsetX === undefined ? 0 : cfg.offsetX} onChange={(e) => updateConfig(n.id, 'offsetX', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset Y<input type="number" step="0.5" value={cfg.offsetY === undefined ? 0 : cfg.offsetY} onChange={(e) => updateConfig(n.id, 'offsetY', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Offset Z<input type="number" step="0.5" value={cfg.offsetZ === undefined ? 0 : cfg.offsetZ} onChange={(e) => updateConfig(n.id, 'offsetZ', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Pitch<input type="number" step="15" value={cfg.pitch === undefined ? 0 : cfg.pitch} onChange={(e) => updateConfig(n.id, 'pitch', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Yaw<input type="number" step="15" value={cfg.yaw === undefined ? 0 : cfg.yaw} onChange={(e) => updateConfig(n.id, 'yaw', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Roll<input type="number" step="15" value={cfg.roll === undefined ? 0 : cfg.roll} onChange={(e) => updateConfig(n.id, 'roll', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
               </div>
               {n.type === 'SERVO' && (
                 <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Rotation Axis

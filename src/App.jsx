@@ -1342,24 +1342,32 @@ const EXAMPLES = [
         { id: "gnd", type: "GROUND", x: 480, y: 160, rotation: 0, props: {} },
         { id: "chassis", type: "CAR_CHASSIS", x: 180, y: 260, rotation: 0, props: {} },
         { id: "pot_steer", type: "POTENTIOMETER", x: 60, y: 340, rotation: 0, props: { resistance: 10000, position: 50, maxPower: 0.25 } },
-        { id: "srv_steer", type: "SERVO", x: 180, y: 340, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } }
+        { id: "srv_steer", type: "SERVO", x: 180, y: 340, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
+        { id: "resHead", type: "RESISTOR", x: 480, y: 40, rotation: 0, props: { resistance: 100, maxPower: 0.25 } },
+        { id: "ledL", type: "LED", x: 620, y: 20, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
+        { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } }
       ],
       wires: [
         { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w2", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFL", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w3", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFR", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w4", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBL", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w5", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBR", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w6", from: { compId: "wFL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w7", from: { compId: "wFR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w8", from: { compId: "wBL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w9", from: { compId: "wBR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w2", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFL", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w3", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFR", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w4", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBL", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w5", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBR", termIdx: 1 }, props: { maxCurrent: 5 } },
+        { id: "w6", from: { compId: "wFL", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w7", from: { compId: "wFR", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w8", from: { compId: "wBL", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w9", from: { compId: "wBR", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
         { id: "w10", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
         { id: "w11", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot_steer", termIdx: 0 }, props: { maxCurrent: 5 } },
         { id: "w12", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot_steer", termIdx: 1 }, props: { maxCurrent: 5 } },
         { id: "w13", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv_steer", termIdx: 0 }, props: { maxCurrent: 5 } },
         { id: "w14", from: { compId: "pot_steer", termIdx: 2 }, to: { compId: "srv_steer", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w15", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv_steer", termIdx: 2 }, props: { maxCurrent: 5 } }
+        { id: "w15", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv_steer", termIdx: 2 }, props: { maxCurrent: 5 } },
+        { id: "w16", from: { compId: "sw", termIdx: 1 }, to: { compId: "resHead", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w17", from: { compId: "resHead", termIdx: 1 }, to: { compId: "ledL", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w18", from: { compId: "resHead", termIdx: 1 }, to: { compId: "ledR", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w19", from: { compId: "ledL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
+        { id: "w20", from: { compId: "ledR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } }
       ],
       servoConfig: {
         "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
@@ -1369,7 +1377,9 @@ const EXAMPLES = [
         "wBL": { offsetX: -1.2, offsetY: 0, offsetZ: 1.5, parentId: "chassis" },
         "wBR": { "offsetX": 1.2, "offsetY": 0, "offsetZ": 1.5, "parentId": "chassis" },
         "sw": { "offsetX": 0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
-        "pot_steer": { "offsetX": -0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" }
+        "pot_steer": { "offsetX": -0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
+        "ledL": { offsetX: -0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" },
+        "ledR": { offsetX: 0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" }
       }
     }
   }
@@ -2751,7 +2761,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2784,6 +2794,8 @@ const App = () => {
         nodeValues[comp.id] = isSimulating && simData.active[comp.id] && !burnedStatesRef.current[comp.id] ? simData.currents[comp.id] || 0 : 0;
       } else if (comp.type === 'GYROSCOPE') {
         nodeValues[comp.id] = { pitch: comp.props.pitch || 0, roll: comp.props.roll || 0 };
+      } else if (comp.type === 'LED') {
+        nodeValues[comp.id] = { isLit: isSimulating && simData.active[comp.id], color: comp.props.color };
       }
     });
   }
@@ -3518,7 +3530,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}

@@ -641,6 +641,47 @@ const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpda
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const LedNode = ({ node, config, isLit = false, color = '#ff003c', isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <group position={[0, 0.1, 0]}>
+        <Cylinder args={[0.2, 0.2, 0.1, 16]} position={[0, -0.05, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isBurned ? "#4a1111" : "#111"} />
+          <Edges color="black" />
+        </Cylinder>
+        <mesh position={[0, 0.15, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+           <sphereGeometry args={[0.2, 16, 16]} />
+           <meshStandardMaterial color={isBurned ? "#222" : color} emissive={isLit && !isBurned ? color : "#000"} emissiveIntensity={isLit && !isBurned ? 2 : 0} transparent={true} opacity={isLit ? 0.9 : 0.6} />
+        </mesh>
+        {isLit && !isBurned && <pointLight color={color} intensity={2} distance={3} decay={2} />}
+      </group>
+      {isSelected && (
+        <Html position={[0, 0.8, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            LED<br/>
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isLit ? 'ON' : 'OFF')}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.4, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -761,6 +802,13 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             <CarChassisNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
               {buildTree(n.id)}
             </CarChassisNode>
+          );
+        }
+        if (n.type === 'LED') {
+          return (
+            <LedNode key={n.id} node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </LedNode>
           );
         }
         return null;

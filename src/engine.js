@@ -290,8 +290,8 @@ export function simulateTick({
         } else if (wave === 'SAW') V += amp * (2 * phase - 1);
         
         vSources.push({ nPos: n0, nNeg: n1, V: V, Rs: 0.01, id: vc.id });
-      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR' || vc.type === 'PROPELLER') {
-        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (vc.type === 'MOTOR' || vc.type === 'PROPELLER' ? 10 : 1000);
+      } else if (vc.type === 'RESISTOR' || vc.type === 'MOTOR' || vc.type === 'PROPELLER' || vc.type === 'WHEEL') {
+        const rVal = vc.props.resistance !== undefined ? vc.props.resistance : (['MOTOR', 'PROPELLER', 'WHEEL'].includes(vc.type) ? 10 : 1000);
         resistors.push({ n1: n0, n2: n1, R: Math.max(1e-3, rVal), id: vc.id });
       } else if (vc.type === 'CAPACITOR') {
         const C = Math.max(1e-12, vc.props.capacitance !== undefined ? vc.props.capacitance : 0.0001);
@@ -971,7 +971,7 @@ export function simulateTick({
       const maxP = c.props?.maxPower !== undefined ? c.props.maxPower : 0.25;
       const maxI = c.props?.maxCurrent !== undefined ? c.props.maxCurrent : 1.0;
       const maxV = c.props?.maxVoltage !== undefined ? c.props.maxVoltage : 25.0;
-      const rBase = Math.max(1e-3, c.props?.resistance !== undefined ? c.props.resistance : (type === 'MOTOR' || type === 'PROPELLER' ? 10 : 1000));
+      const rBase = Math.max(1e-3, c.props?.resistance !== undefined ? c.props.resistance : (['MOTOR', 'PROPELLER', 'WHEEL'].includes(type) ? 10 : 1000));
       
       if (type === 'RESISTOR') { if ((current * current * rBase) > maxP) { isBurned = true; burnReason = "MAX POWER EXCEEDED"; } }
       else if (type === 'LED' || type === 'DIODE') { if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; } }
@@ -984,7 +984,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
-      else if (['MOTOR', 'PROPELLER', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
+      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
       else if (type === 'CAPACITOR') {

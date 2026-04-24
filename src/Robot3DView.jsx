@@ -536,6 +536,99 @@ const WorkBedNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateO
   return <group ref={groupRef} position={offset}>{content}</group>;
 };
 
+const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const wheelRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  useFrame((state, delta) => {
+     if (wheelRef.current && speed !== 0) {
+         wheelRef.current.rotation.y -= speed * delta * 20;
+     }
+  });
+
+  const content = (
+    <>
+      <group rotation={[0, 0, Math.PI / 2]}>
+        <group ref={wheelRef}>
+          <Cylinder args={[0.5, 0.5, 0.3, 32]}
+            onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+            onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+            onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+          >
+            <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#111111")} roughness={0.9} />
+          </Cylinder>
+          <Cylinder args={[0.3, 0.3, 0.32, 16]}>
+            <meshStandardMaterial color="#cbd5e1" metalness={0.6} />
+            <Edges color="#555" />
+          </Cylinder>
+          {/* Visual indicator (spokes) to make rotation noticeable */}
+          <DreiBox args={[0.45, 0.33, 0.08]} position={[0, 0, 0]}>
+            <meshStandardMaterial color="#111" />
+          </DreiBox>
+          <DreiBox args={[0.08, 0.33, 0.45]} position={[0, 0, 0]}>
+            <meshStandardMaterial color="#111" />
+          </DreiBox>
+        </group>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.0, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            WHEEL<br/>
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (Math.abs(speed) > 0.01 ? 'SPINNING' : 'STOPPED')}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.6, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
+const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <group position={[0, 0.25, 0]}>
+        <DreiBox args={[2, 0.5, 4]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#b3002a"} roughness={0.5} metalness={0.3} />
+          <Edges color="black" />
+        </DreiBox>
+        <DreiBox args={[1.5, 0.6, 2]} position={[0, 0.55, -0.2]}>
+          <meshStandardMaterial color={isSelected ? "#00aacc" : "#ff003c"} roughness={0.5} metalness={0.3} />
+          <Edges color="black" />
+        </DreiBox>
+        <DreiBox args={[1.2, 0.3, 0.1]} position={[0, 0, -2.01]}>
+           <meshStandardMaterial color="#111" />
+        </DreiBox>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.5, 0]} center>
+          <div className="bg-black/90 text-red-400 px-2 py-1 rounded border border-red-500 text-[10px] font-mono whitespace-nowrap pointer-events-none">
+            CAR CHASSIS
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.5, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset}>{content}</group>;
+};
+
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -642,6 +735,20 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             <WorkBedNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
               {buildTree(n.id)}
             </WorkBedNode>
+          );
+        }
+        if (n.type === 'WHEEL') {
+          return (
+            <WheelNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </WheelNode>
+          );
+        }
+        if (n.type === 'CAR_CHASSIS') {
+          return (
+            <CarChassisNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </CarChassisNode>
           );
         }
         return null;

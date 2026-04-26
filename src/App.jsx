@@ -357,6 +357,14 @@ const BuckConverterSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const CameraSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="3" y="6" width="18" height="12" rx="2" />
+    <circle cx="12" cy="12" r="3" />
+    <circle cx="18" cy="9" r="1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 const COMPONENT_TYPES = {
   BATTERY: { 
     id: 'BATTERY', name: 'DC Source', desc: 'Provides a constant DC voltage.', 
@@ -627,6 +635,14 @@ Example: (I0 AND NOT I1) OR I1`,
     terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
     defaultProps: { resistance: 10, maxCurrent: 3 }
   },
+  CAMERA: {
+    id: 'CAMERA', name: 'Camera Module', desc: 'Digital camera module. Outputs active high on video pin when powered.',
+    icon: CameraSymbol, color: '#00f0ff',
+    terminals: [
+      { x: 40, y: 0, type: 'vcc' }, { x: 40, y: 60, type: 'gnd' }, { x: 80, y: 30, type: 'out' }
+    ],
+    defaultProps: { maxVoltage: 12, maxCurrent: 0.5 }
+  },
   CAR_CHASSIS: {
     id: 'CAR_CHASSIS', name: 'Car Chassis', desc: 'Structural vehicle chassis. No electrical pins.',
     icon: CarChassisSymbol, color: '#ff003c',
@@ -639,7 +655,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS']
 };
 
 // Map compound devices to base physical components
@@ -727,6 +743,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'SHIFT_REGISTER') return '4-BIT SIPO';
   if (comp.type === 'LATCH') return '4-BIT LATCH';
   if (comp.type === 'SEVEN_SEGMENT') return '7-SEG';
+  if (comp.type === 'CAMERA') return 'CAM';
   if (comp.type === 'SOLDERING_IRON') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'WORK_BED') return 'BED';
   if (comp.type === 'CAR_CHASSIS') return 'CHASSIS';
@@ -1399,6 +1416,39 @@ const EXAMPLES = [
         "ledR": { offsetX: 0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" }
       }
     }
+  },
+  {
+    name: "Security Camera & Monitor",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 100, rotation: 0, props: { voltage: 9, maxCurrent: 2 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 220, rotation: 0, props: {} },
+        { id: "sw", type: "SWITCH", x: 180, y: 100, rotation: 0, props: { isOpen: false } },
+        { id: "cam", type: "CAMERA", x: 300, y: 100, rotation: 0, props: {} },
+        { id: "osc", type: "OSCILLATOR", x: 180, y: 200, rotation: 0, props: { waveform: "SINE", voltage: 2.5, offset: 2.5, frequency: 0.2 } },
+        { id: "srv", type: "SERVO", x: 300, y: 260, rotation: 0, props: {} },
+        { id: "res", type: "RESISTOR", x: 440, y: 130, rotation: 0, props: { resistance: 330 } },
+        { id: "monitor_led", type: "LED", x: 560, y: 130, rotation: 0, props: { color: "#00f0ff" } }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w2", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 } },
+        { id: "w3", from: { compId: "sw", termIdx: 1 }, to: { compId: "cam", termIdx: 0 } },
+        { id: "w4", from: { compId: "cam", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w5", from: { compId: "cam", termIdx: 2 }, to: { compId: "res", termIdx: 0 } },
+        { id: "w6", from: { compId: "res", termIdx: 1 }, to: { compId: "monitor_led", termIdx: 0 } },
+        { id: "w7", from: { compId: "monitor_led", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w8", from: { compId: "sw", termIdx: 1 }, to: { compId: "srv", termIdx: 0 } },
+        { id: "w9", from: { compId: "srv", termIdx: 2 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w10", from: { compId: "osc", termIdx: 0 }, to: { compId: "srv", termIdx: 1 } },
+        { id: "w11", from: { compId: "osc", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } }
+      ],
+      servoConfig: {
+        "srv": { axis: "Y", offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null },
+        "cam": { offsetX: 0, offsetY: 1.5, offsetZ: 0, pitch: 10, parentId: "srv" },
+        "monitor_led": { offsetX: -2, offsetY: 0.5, offsetZ: 2, pitch: -30, yaw: 45, parentId: null }
+      }
+    }
   }
 ];
 
@@ -1647,7 +1697,7 @@ const App = () => {
             val = (simData.voltages[`${comp.id}-0`] || 0) - (simData.voltages[`${comp.id}-1`] || 0);
             unit = 'V';
         }
-        else if (['TIMER555', 'OPAMP', 'COMPARATOR', 'BUCK_CONVERTER'].includes(comp.type)) {
+        else if (['TIMER555', 'OPAMP', 'COMPARATOR', 'BUCK_CONVERTER', 'CAMERA'].includes(comp.type)) {
             val = simData.voltages[`${comp.id}-2`] || 0;
             unit = 'V';
         }
@@ -2542,6 +2592,9 @@ const App = () => {
         else if (c.type === 'BUCK_CONVERTER') {
             spice += `* Buck Converter component ${name} omitted (behavioral block)\n`;
         }
+        else if (c.type === 'CAMERA') {
+            spice += `* Camera component ${name} omitted (behavioral block)\n`;
+        }
     });
 
     spice += `\n.model DLED D(Is=1e-14 n=1.8 Rs=2)\n`;
@@ -2816,6 +2869,8 @@ const App = () => {
         nodeValues[comp.id] = { pitch: comp.props.pitch || 0, roll: comp.props.roll || 0 };
       } else if (comp.type === 'LED') {
         nodeValues[comp.id] = { isLit: isSimulating && simData.active[comp.id], color: comp.props.color };
+      } else if (comp.type === 'CAMERA') {
+        nodeValues[comp.id] = isSimulating && simData.active[comp.id] && !burnedStatesRef.current[comp.id];
       }
     });
   }
@@ -3323,7 +3378,7 @@ const App = () => {
                 if (comp.type === 'NPN') current = simData.currents[`${comp.id}_CE`] || 0;
                 else if (comp.type === 'PNP') current = simData.currents[`${comp.id}_EC`] || 0;
                 else if (comp.type === 'HBRIDGE') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT1`] || 0), Math.abs(simData.currents[`${comp.id}_OUT2`] || 0));
-                else if (comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'BUCK_CONVERTER') current = simData.currents[`${comp.id}_OUT`] || 0;
+                else if (comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'BUCK_CONVERTER' || comp.type === 'CAMERA') current = simData.currents[`${comp.id}_OUT`] || 0;
                 else if (comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER') current = Math.max(Math.abs(simData.currents[`${comp.id}_OUT0`] || 0), Math.abs(simData.currents[`${comp.id}_OUT1`] || 0));
                 else if (comp.type === 'SEVEN_SEGMENT') current = simData.currents[comp.id] || 0;
                 else if (comp.type === 'GYROSCOPE') current = simData.currents[comp.id] || 0;
@@ -3431,7 +3486,7 @@ const App = () => {
                             onPointerDown={(e) => handleTerminalPointerDown(e, comp.id, idx)}
                           />
                           {/* Label for special pins */}
-                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT' || comp.type === 'CCD' || comp.type === 'GYROSCOPE' || comp.type === 'BUCK_CONVERTER') && (
+                          {(comp.type === 'NPN' || comp.type === 'PNP' || comp.type === 'HBRIDGE' || comp.type === 'POTENTIOMETER' || comp.type === 'GROUND' || comp.type === 'SERVO' || comp.type === 'TRANSFORMER' || comp.type === 'RAM' || comp.type === 'TIMER555' || comp.type === 'OPAMP' || comp.type === 'COMPARATOR' || comp.type === 'PLC' || comp.type === 'SHIFT_REGISTER' || comp.type === 'LATCH' || comp.type === 'SEVEN_SEGMENT' || comp.type === 'CCD' || comp.type === 'GYROSCOPE' || comp.type === 'BUCK_CONVERTER' || comp.type === 'CAMERA') && (
                              <text 
                                x={labelX} 
                                y={labelY} 
@@ -3550,7 +3605,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED', 'CAMERA'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3717,6 +3772,12 @@ const App = () => {
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_in</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_out</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-2`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
                                 <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_out</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[`${comp.id}_OUT`], 'A')}</span></div>
+                              </>
+                           ) : comp.type === 'CAMERA' ? (
+                              <>
+                                <div className="flex justify-between text-[10px]"><span className="text-cyan-700">V_cc</span> <span className="font-mono text-cyan-300">{formatUnit((simData.voltages[`${comp.id}-0`]||0) - (simData.voltages[`${comp.id}-1`]||0), 'V')}</span></div>
+                                <div className="flex justify-between text-[10px]"><span className="text-cyan-700">I_cc</span> <span className="font-mono text-cyan-300">{formatUnit(simData.currents[comp.id], 'A')}</span></div>
+                                <div className="flex justify-between text-[10px]"><span className="text-cyan-700">State</span> <span className="font-mono text-cyan-300">{isSimulating && simData.active[comp.id] && !burnedStatesRef.current[comp.id] ? 'RECORDING' : 'IDLE'}</span></div>
                               </>
                            ) : comp.type === 'HBRIDGE' ? (
                               <>

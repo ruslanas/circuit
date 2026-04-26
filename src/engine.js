@@ -483,6 +483,15 @@ export function simulateTick({
         }
 
         vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 0.1, id: vc.id + "_OUT" });
+      } else if (vc.type === 'CAMERA') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nOut = tNodes[vc.virtualTerminals[2]];
+
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 100, id: vc.id });
+        const vVcc = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const vOutTarget = vVcc > 2.5 ? (vVcc > 0 ? vVcc : 5) : 0;
+        vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 50, id: vc.id + "_OUT" });
       } else if (vc.type === 'SHIFT_REGISTER') {
         const nVcc = tNodes[vc.virtualTerminals[0]];
         const nGnd = tNodes[vc.virtualTerminals[1]];
@@ -929,6 +938,11 @@ export function simulateTick({
           branchCurrentsMap[`${vc.id}_OUT`] = iOut;
           branchCurrentsMap[vc.id] = Math.abs(iOut);
           if (Math.abs(iOut) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'CAMERA') {
+          const vIdx = vSources.findIndex(vs => vs.id === vc.id + "_OUT");
+          const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+          branchCurrentsMap[`${vc.id}_OUT`] = iOut;
+          if (Math.abs(branchCurrentsMap[vc.id] || 0) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         }
       });
 
@@ -1008,7 +1022,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
-      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
+      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE', 'CAMERA'].includes(type)) {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
       else if (type === 'CAPACITOR') {

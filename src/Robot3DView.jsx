@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useRef, useState, useMemo } from 'react';
+import { Canvas, useFrame, useThree, createPortal } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges } from '@react-three/drei';
+import * as THREE from 'three';
 
 const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const hornRef = useRef(null);
@@ -682,6 +683,132 @@ const LedNode = ({ node, config, isLit = false, color = '#ff003c', isSelected, i
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const ScreenSpaceMonitor = ({ texture, innerRef }) => {
+  const { camera, scene, size } = useThree();
+
+  // Ensure main camera is in the scene so its children (our portal) are rendered
+  React.useLayoutEffect(() => {
+    scene.add(camera);
+  }, [camera, scene]);
+
+  // Calculate absolute frustum dimensions for a fixed distance
+  const dist = 2; // Further away to avoid clipping
+  const fov = camera.fov * (Math.PI / 180);
+  const frustumHeight = 2 * Math.tan(fov / 2) * dist;
+  const frustumWidth = frustumHeight * (size.width / size.height);
+  const scale = dist / 3;
+  
+  // Lock rigidly to the bottom-right corner coordinates
+  const x = frustumWidth / 2 - (0.85 * scale);
+  const y = -frustumHeight / 2 + (0.6 * scale);
+  const z = -dist;
+
+  return createPortal(
+    <group ref={innerRef} position={[x, y, z]} scale={[scale, scale, scale]}>
+      <DreiBox args={[1.5, 1.0, 0.01]} position={[0, 0, -0.01]}>
+         <meshStandardMaterial color="#111" depthTest={false} transparent={true} renderOrder={9999} />
+         <Edges color="#00f0ff" />
+      </DreiBox>
+      <mesh position={[0, 0, 0]} scale={[1, -1, 1]} renderOrder={10000}>
+         <planeGeometry args={[1.4, 0.9]} />
+         <meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide} depthTest={false} transparent={true} />
+      </mesh>
+      <mesh position={[-0.6, 0.35, 0.01]} renderOrder={10001}>
+         <circleGeometry args={[0.04, 16]} />
+         <meshBasicMaterial color="#ff003c" depthTest={false} transparent={true} />
+      </mesh>
+      <Html position={[-0.45, 0.35, 0.01]} center>
+         <div className="text-[10px] text-pink-500 font-bold font-mono animate-pulse drop-shadow-[0_0_2px_rgba(255,0,60,0.8)] pointer-events-none">REC</div>
+      </Html>
+    </group>,
+    camera
+  );
+};
+
+const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const monitorGroupRef = useRef(null);
+  
+  const { renderTarget, virtualCam } = useMemo(() => {
+    const rt = new THREE.WebGLRenderTarget(512, 512, { format: THREE.RGBAFormat, depthBuffer: true });
+    rt.texture.colorSpace = THREE.SRGBColorSpace || 'srgb';
+    const cam = new THREE.PerspectiveCamera(90, 1.5 / 1.1, 0.1, 100);
+    cam.updateProjectionMatrix();
+    return { renderTarget: rt, virtualCam: cam };
+  }, []);
+
+  useFrame(({ gl, scene }) => {
+    if (isActive && !isBurned && groupRef.current) {
+      groupRef.current.updateWorldMatrix(true, false);
+      groupRef.current.getWorldPosition(virtualCam.position);
+      groupRef.current.getWorldQuaternion(virtualCam.quaternion);
+      virtualCam.translateY(0.4);
+      virtualCam.translateZ(0.45); // Safely push past the front of the physical lens
+      virtualCam.rotateY(Math.PI);
+      virtualCam.updateMatrixWorld();
+
+      if (monitorGroupRef.current) monitorGroupRef.current.visible = false; // Hide HUD from the recording
+
+      const currentRt = gl.getRenderTarget();
+      const currentClearColor = gl.getClearColor(new THREE.Color());
+      const currentClearAlpha = gl.getClearAlpha();
+
+      gl.setRenderTarget(renderTarget);
+      gl.setClearColor('#0f172a', 1); // Dark slate blue "monitor on" backlight
+      gl.clear();
+      gl.render(scene, virtualCam);
+
+      gl.setClearColor(currentClearColor, currentClearAlpha);
+      gl.setRenderTarget(currentRt);
+
+      if (monitorGroupRef.current) monitorGroupRef.current.visible = true; // Show HUD back to player
+    }
+  });
+
+  const content = (
+    <>
+      <DreiBox args={[1.0, 0.8, 0.4]} position={[0, 0.4, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#1e293b")} />
+        <Edges color="black" />
+      </DreiBox>
+      <Cylinder args={[0.25, 0.25, 0.2, 16]} position={[0, 0.4, 0.25]} rotation={[Math.PI/2, 0, 0]}>
+        <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.8} />
+        <Edges color="#333" />
+      </Cylinder>
+      <Cylinder args={[0.18, 0.18, 0.22, 16]} position={[0, 0.4, 0.25]} rotation={[Math.PI/2, 0, 0]}>
+        <meshStandardMaterial color="#00f0ff" roughness={0.1} metalness={0.9} emissive="#00f0ff" emissiveIntensity={isActive && !isBurned ? 0.5 : 0} />
+      </Cylinder>
+      <mesh position={[0.35, 0.65, 0.21]}>
+        <sphereGeometry args={[0.05, 8, 8]} />
+        <meshStandardMaterial color={isActive && !isBurned ? "#ff003c" : "#333"} emissive={isActive && !isBurned ? "#ff003c" : "#000"} emissiveIntensity={isActive && !isBurned ? 2 : 0} />
+      </mesh>
+
+      {/* Virtual HUD Monitor */}
+      <group>
+        {isActive && !isBurned && <ScreenSpaceMonitor texture={renderTarget.texture} innerRef={monitorGroupRef} />}
+      </group>
+
+      {isSelected && (
+        <Html position={[0, 2.5, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            CAMERA<br/>
+            {isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isActive ? 'RECORDING' : 'IDLE')}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.8, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -811,6 +938,13 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             </LedNode>
           );
         }
+        if (n.type === 'CAMERA') {
+          return (
+            <CameraNode key={n.id} node={n} config={cfg} isActive={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </CameraNode>
+          );
+        }
         return null;
       });
   };
@@ -865,7 +999,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       <div className="flex-1 bg-[#050507] relative">
         <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => setSelectedNode(null)}>
           <ambientLight intensity={0.5} /><directionalLight position={[10, 10, 5]} intensity={1.5} /><OrbitControls makeDefault />
-          <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="rgba(0,240,255,0.2)" sectionThickness={1} cellThickness={0.5} />
+          <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="#003a40" sectionThickness={1} cellThickness={0.5} />
           <group position={[0, 0.6, 0]}>{buildTree(null)}</group>
         </Canvas>
       </div>

@@ -642,6 +642,54 @@ const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpda
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const XChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <group position={[0, 0.1, 0]}>
+        {/* Arm 1 */}
+        <DreiBox args={[0.3, 0.2, 4]} position={[0, 0, 0]} rotation={[0, Math.PI / 4, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#333"} roughness={0.7} />
+          <Edges color="#00f0ff" />
+        </DreiBox>
+        {/* Arm 2 */}
+        <DreiBox args={[0.3, 0.2, 4]} position={[0, 0, 0]} rotation={[0, -Math.PI / 4, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#333"} roughness={0.7} />
+          <Edges color="#00f0ff" />
+        </DreiBox>
+        {/* Center Hub */}
+        <Cylinder args={[0.4, 0.4, 0.25, 16]} position={[0, 0, 0]}>
+           <meshStandardMaterial color={isSelected ? "#00aacc" : "#111"} />
+           <Edges color="#ff003c" />
+        </Cylinder>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.0, 0]} center>
+          <div className="bg-black/90 text-red-400 px-2 py-1 rounded border border-red-500 text-[10px] font-mono whitespace-nowrap pointer-events-none">
+            X-CHASSIS
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.25, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 const LedNode = ({ node, config, isLit = false, color = '#ff003c', isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
@@ -749,109 +797,29 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
     return nodes
       .filter(n => (nodeConfig[n.id]?.parentId || null) === parentId)
       .map(n => {
-        const cfg = nodeConfig[n.id];
+        const cfg = nodeConfig[n.id] || {};
         const val = nodeValues[n.id];
         const isSelected = selectedNode === n.id;
+        const scale = [cfg.scaleX ?? 1, cfg.scaleY ?? 1, cfg.scaleZ ?? 1];
         
-        if (n.type === 'SERVO') {
-          return (
-            <ServoNode key={n.id} node={n} config={cfg} angle={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </ServoNode>
-          );
-        }
-        if (n.type === 'POTENTIOMETER') {
-          return (
-            <PotentiometerNode key={n.id} node={n} config={cfg} position={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
-              {buildTree(n.id)}
-            </PotentiometerNode>
-          );
-        }
-        if (n.type === 'PUSH_BUTTON') {
-          return (
-            <ButtonNode key={n.id} node={n} config={cfg} isPressed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
-              {buildTree(n.id)}
-            </ButtonNode>
-          );
-        }
-        if (n.type === 'SWITCH') {
-          return (
-            <SwitchNode key={n.id} node={n} config={cfg} isOpen={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
-              {buildTree(n.id)}
-            </SwitchNode>
-          );
-        }
-        if (n.type === 'SEVEN_SEGMENT') {
-          return (
-            <SevenSegmentNode key={n.id} node={n} config={cfg} segments={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </SevenSegmentNode>
-          );
-        }
-        if (n.type === 'SOLDERING_IRON') {
-          return (
-            <SolderingIronNode key={n.id} node={n} config={cfg} isHeated={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </SolderingIronNode>
-          );
-        }
-        if (n.type === 'MOTOR') {
-          return (
-            <MotorNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </MotorNode>
-          );
-        }
-        if (n.type === 'PROPELLER') {
-          return (
-            <PropellerNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </PropellerNode>
-          );
-        }
-        if (n.type === 'GYROSCOPE') {
-          return (
-            <GyroscopeNode key={n.id} node={n} config={cfg} pitch={val?.pitch} roll={val?.roll} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>
-              {buildTree(n.id)}
-            </GyroscopeNode>
-          );
-        }
-        if (n.type === 'WORK_BED') {
-          return (
-            <WorkBedNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </WorkBedNode>
-          );
-        }
-        if (n.type === 'WHEEL') {
-          return (
-            <WheelNode key={n.id} node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </WheelNode>
-          );
-        }
-        if (n.type === 'CAR_CHASSIS') {
-          return (
-            <CarChassisNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </CarChassisNode>
-          );
-        }
-        if (n.type === 'LED') {
-          return (
-            <LedNode key={n.id} node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </LedNode>
-          );
-        }
-        if (n.type === 'AERO_SHELL') {
-          return (
-            <AeroShellNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
-              {buildTree(n.id)}
-            </AeroShellNode>
-          );
-        }
-        return null;
+        let content = null;
+        if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
+        else if (n.type === 'POTENTIOMETER') content = <PotentiometerNode node={n} config={cfg} position={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</PotentiometerNode>;
+        else if (n.type === 'PUSH_BUTTON') content = <ButtonNode node={n} config={cfg} isPressed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</ButtonNode>;
+        else if (n.type === 'SWITCH') content = <SwitchNode node={n} config={cfg} isOpen={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</SwitchNode>;
+        else if (n.type === 'SEVEN_SEGMENT') content = <SevenSegmentNode node={n} config={cfg} segments={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SevenSegmentNode>;
+        else if (n.type === 'SOLDERING_IRON') content = <SolderingIronNode node={n} config={cfg} isHeated={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SolderingIronNode>;
+        else if (n.type === 'MOTOR') content = <MotorNode node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</MotorNode>;
+        else if (n.type === 'PROPELLER') content = <PropellerNode node={n} config={cfg} speed={val} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</PropellerNode>;
+        else if (n.type === 'GYROSCOPE') content = <GyroscopeNode node={n} config={cfg} pitch={val?.pitch} roll={val?.roll} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</GyroscopeNode>;
+        else if (n.type === 'WORK_BED') content = <WorkBedNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WorkBedNode>;
+        else if (n.type === 'WHEEL') content = <WheelNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WheelNode>;
+        else if (n.type === 'CAR_CHASSIS') content = <CarChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</CarChassisNode>;
+        else if (n.type === 'X_CHASSIS') content = <XChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</XChassisNode>;
+        else if (n.type === 'LED') content = <LedNode node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</LedNode>;
+        else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
+
+        return content ? <group key={n.id} scale={scale}>{content}</group> : null;
       });
   };
 
@@ -888,6 +856,11 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
                 <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Pitch<input type="number" step="15" value={cfg.pitch === undefined ? 0 : cfg.pitch} onChange={(e) => updateConfig(n.id, 'pitch', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
                 <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Yaw<input type="number" step="15" value={cfg.yaw === undefined ? 0 : cfg.yaw} onChange={(e) => updateConfig(n.id, 'yaw', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
                 <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Roll<input type="number" step="15" value={cfg.roll === undefined ? 0 : cfg.roll} onChange={(e) => updateConfig(n.id, 'roll', isNaN(e.target.valueAsNumber) ? 0 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+              </div>
+              <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Scale X<input type="number" step="0.1" value={cfg.scaleX === undefined ? 1 : cfg.scaleX} onChange={(e) => updateConfig(n.id, 'scaleX', isNaN(e.target.valueAsNumber) ? 1 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Scale Y<input type="number" step="0.1" value={cfg.scaleY === undefined ? 1 : cfg.scaleY} onChange={(e) => updateConfig(n.id, 'scaleY', isNaN(e.target.valueAsNumber) ? 1 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
+                <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Scale Z<input type="number" step="0.1" value={cfg.scaleZ === undefined ? 1 : cfg.scaleZ} onChange={(e) => updateConfig(n.id, 'scaleZ', isNaN(e.target.valueAsNumber) ? 1 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
               </div>
               {n.type === 'SERVO' && (
                 <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Rotation Axis

@@ -364,6 +364,14 @@ const AeroShellSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const XChassisSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <line x1="4" y1="4" x2="20" y2="20" />
+    <line x1="20" y1="4" x2="4" y2="20" />
+    <circle cx="12" cy="12" r="2" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 const COMPONENT_TYPES = {
   BATTERY: { 
     id: 'BATTERY', name: 'DC Source', desc: 'Provides a constant DC voltage.', 
@@ -640,6 +648,12 @@ Example: (I0 AND NOT I1) OR I1`,
     terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
     defaultProps: { resistance: 10, maxCurrent: 3 }
   },
+  X_CHASSIS: {
+    id: 'X_CHASSIS', name: 'X-Chassis', desc: 'Lean X-shaped structural frame for drones or rovers. No electrical pins.',
+    icon: XChassisSymbol, color: '#ff003c',
+    terminals: [],
+    defaultProps: {}
+  },
   CAR_CHASSIS: {
     id: 'CAR_CHASSIS', name: 'Car Chassis', desc: 'Structural vehicle chassis. No electrical pins.',
     icon: CarChassisSymbol, color: '#ff003c',
@@ -652,7 +666,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS', 'AERO_SHELL']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL']
 };
 
 // Map compound devices to base physical components
@@ -743,6 +757,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'SOLDERING_IRON') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'WORK_BED') return 'BED';
   if (comp.type === 'CAR_CHASSIS') return 'CHASSIS';
+  if (comp.type === 'X_CHASSIS') return 'X-FRAME';
   if (comp.type === 'AERO_SHELL') return 'SHELL';
   return '';
 };
@@ -1361,7 +1376,7 @@ const EXAMPLES = [
     }
   },
   {
-    name: "Toy Car (4WD)",
+    name: "Modern Sports Car (4WD)",
     data: {
       components: [
         { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 5, maxCurrent: 5 } },
@@ -1371,14 +1386,15 @@ const EXAMPLES = [
         { id: "wBL", type: "WHEEL", x: 340, y: 200, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
         { id: "wBR", type: "WHEEL", x: 340, y: 280, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
         { id: "gnd", type: "GROUND", x: 480, y: 160, rotation: 0, props: {} },
-        { id: "chassis", type: "CAR_CHASSIS", x: 180, y: 260, rotation: 0, props: {} },
+        { id: "chassis", type: "X_CHASSIS", x: 180, y: 260, rotation: 0, props: {} },
         { id: "pot_steer", type: "POTENTIOMETER", x: 60, y: 340, rotation: 0, props: { resistance: 10000, position: 50, maxPower: 0.25 } },
         { id: "srv_steer", type: "SERVO", x: 180, y: 340, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
         { id: "resHead", type: "RESISTOR", x: 480, y: 40, rotation: 0, props: { resistance: 100, maxPower: 0.25 } },
         { id: "ledL", type: "LED", x: 620, y: 20, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
         { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
         { id: "shellTop", type: "AERO_SHELL", x: 340, y: 360, rotation: 0, props: {} },
-        { id: "shellBot", type: "AERO_SHELL", x: 480, y: 360, rotation: 0, props: {} }
+        { id: "shellBot", type: "AERO_SHELL", x: 480, y: 360, rotation: 0, props: {} },
+        { id: "spoiler", type: "AERO_SHELL", x: 620, y: 360, rotation: 0, props: {} }
       ],
       wires: [
         { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
@@ -1403,18 +1419,19 @@ const EXAMPLES = [
         { id: "w20", from: { compId: "ledR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } }
       ],
       servoConfig: {
-        "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
-        "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0.5, offsetZ: -1.5, pitch: 180, parentId: "chassis" },
-        "wFL": { offsetX: -1.2, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
-        "wFR": { offsetX: 1.2, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
-        "wBL": { offsetX: -1.2, offsetY: 0, offsetZ: 1.5, parentId: "chassis" },
-        "wBR": { "offsetX": 1.2, "offsetY": 0, "offsetZ": 1.5, "parentId": "chassis" },
-        "sw": { "offsetX": 0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
-        "pot_steer": { "offsetX": -0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
-        "ledL": { offsetX: -0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" },
-        "ledR": { offsetX: 0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" },
-        "shellTop": { offsetX: 0, offsetY: 0.3, offsetZ: 0, parentId: "chassis" },
-        "shellBot": { offsetX: 0, offsetY: 0.2, offsetZ: 0, pitch: 180, parentId: "chassis" }
+        "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null, scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
+        "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0.833, offsetZ: -2.5, pitch: 180, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "wFL": { offsetX: -1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
+        "wFR": { offsetX: 1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
+        "wBL": { offsetX: -1.4, offsetY: 0, offsetZ: 2.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "wBR": { offsetX: 1.4, offsetY: 0, offsetZ: 2.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "sw": { offsetX: 0.75, offsetY: 1.5, offsetZ: -1.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "pot_steer": { offsetX: -0.75, offsetY: 1.5, offsetZ: -1.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "ledL": { offsetX: -1.41, offsetY: 0.41, offsetZ: -3.5, pitch: -90, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "ledR": { offsetX: 1.41, offsetY: 0.41, offsetZ: -3.5, pitch: -90, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
+        "shellTop": { offsetX: 0, offsetY: 0.4, offsetZ: 0.2, parentId: "chassis", scaleX: 1.8, scaleY: 1.0, scaleZ: 2.2 },
+        "shellBot": { offsetX: 0, offsetY: 0.2, offsetZ: 0, pitch: 180, parentId: "chassis", scaleX: 2.0, scaleY: 0.6, scaleZ: 2.6 },
+        "spoiler": { offsetX: 0, offsetY: 1.8, offsetZ: 4.5, pitch: -5, parentId: "chassis", scaleX: 2.0, scaleY: 0.1, scaleZ: 0.6 }
       }
     }
   }
@@ -2557,6 +2574,9 @@ const App = () => {
         else if (c.type === 'CAR_CHASSIS') {
             spice += `* Car Chassis component ${name} omitted (structural only)\n`;
         }
+        else if (c.type === 'X_CHASSIS') {
+            spice += `* X-Chassis component ${name} omitted (structural only)\n`;
+        }
         else if (c.type === 'AERO_SHELL') {
             spice += `* Aero Shell component ${name} omitted (structural only)\n`;
         }
@@ -2803,7 +2823,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -3572,7 +3592,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}

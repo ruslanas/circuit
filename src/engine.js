@@ -466,6 +466,23 @@ export function simulateTick({
         if(nXn !== undefined && nGnd !== undefined) vSources.push({ nPos: nXn, nNeg: nGnd, V: pitch < -threshold ? outV : 0, Rs: 50, id: vc.id + "_XN" });
         if(nYp !== undefined && nGnd !== undefined) vSources.push({ nPos: nYp, nNeg: nGnd, V: roll > threshold ? outV : 0, Rs: 50, id: vc.id + "_YP" });
         if(nYn !== undefined && nGnd !== undefined) vSources.push({ nPos: nYn, nNeg: nGnd, V: roll < -threshold ? outV : 0, Rs: 50, id: vc.id + "_YN" });
+      } else if (vc.type === 'BUCK_CONVERTER') {
+        const nIn = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        const nOut = tNodes[vc.virtualTerminals[2]];
+
+        if(nIn !== undefined && nGnd !== undefined) resistors.push({ n1: nIn, n2: nGnd, R: 10000, id: vc.id + "_RIN" });
+
+        const vIn = (prevState.vNodes[vc.virtualTerminals[0]] || 0) - (prevState.vNodes[vc.virtualTerminals[1]] || 0);
+        const target = vc.props.targetVoltage !== undefined ? vc.props.targetVoltage : 5;
+        let vOutTarget = 0;
+        if (vIn > target + 0.5) {
+          vOutTarget = target;
+        } else if (vIn > 0.5) {
+          vOutTarget = vIn - 0.5; // Dropout voltage
+        }
+
+        vSources.push({ nPos: nOut, nNeg: nGnd, V: vOutTarget, Rs: 0.1, id: vc.id + "_OUT" });
       } else if (vc.type === 'SHIFT_REGISTER') {
         const nVcc = tNodes[vc.virtualTerminals[0]];
         const nGnd = tNodes[vc.virtualTerminals[1]];
@@ -906,6 +923,12 @@ export function simulateTick({
           });
           branchCurrentsMap[vc.id] = totalCurrent;
           if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'BUCK_CONVERTER') {
+          const vIdx = vSources.findIndex(vs => vs.id === vc.id + "_OUT");
+          const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
+          branchCurrentsMap[`${vc.id}_OUT`] = iOut;
+          branchCurrentsMap[vc.id] = Math.abs(iOut);
+          if (Math.abs(iOut) > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         }
       });
 
@@ -966,6 +989,7 @@ export function simulateTick({
         current = 0;
         for(let i=0; i<4; i++) current += Math.abs(branchCurrentsMap[`${c.id}_OUT${i}`] || 0);
       }
+      else if (type === 'BUCK_CONVERTER') current = branchCurrentsMap[`${c.id}_OUT`] || 0;
       else current = branchCurrentsMap[c.id] || 0;
 
       const maxP = c.props?.maxPower !== undefined ? c.props.maxPower : 0.25;
@@ -990,6 +1014,10 @@ export function simulateTick({
       else if (type === 'CAPACITOR') {
         const v = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
         if (Math.abs(v) > maxV) { isBurned = true; burnReason = "MAX VOLTAGE EXCEEDED"; }
+      } else if (type === 'BUCK_CONVERTER') {
+        const vIn = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
+        if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
+        else if (Math.abs(vIn) > maxV) { isBurned = true; burnReason = "MAX VOLTAGE EXCEEDED"; }
       } else if (type === 'SEVEN_SEGMENT') {
         let segmentBurned = false;
         ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(seg => {

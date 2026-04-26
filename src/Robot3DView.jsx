@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges } from '@react-three/drei';
+import * as THREE from 'three';
 
 const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, onSelect, onUpdateOffset, children }) => {
   const hornRef = useRef(null);
@@ -682,6 +683,38 @@ const LedNode = ({ node, config, isLit = false, color = '#ff003c', isSelected, i
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const AeroShellNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  const content = (
+    <>
+      <group position={[0, 0, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <mesh scale={[1, 0.4, 2]}>
+          {/* Render a half-sphere by limiting phi/theta lengths */}
+          <sphereGeometry args={[2.0, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={isSelected ? "#0088aa" : "#00f0ff"} transparent opacity={0.6} roughness={0.1} metalness={0.8} side={THREE.DoubleSide} />
+        </mesh>
+      </group>
+      {isSelected && (
+        <Html position={[0, 1.5, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            AERO SHELL
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.8, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
@@ -811,6 +844,13 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             </LedNode>
           );
         }
+        if (n.type === 'AERO_SHELL') {
+          return (
+            <AeroShellNode key={n.id} node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>
+              {buildTree(n.id)}
+            </AeroShellNode>
+          );
+        }
         return null;
       });
   };
@@ -865,7 +905,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       <div className="flex-1 bg-[#050507] relative">
         <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => setSelectedNode(null)}>
           <ambientLight intensity={0.5} /><directionalLight position={[10, 10, 5]} intensity={1.5} /><OrbitControls makeDefault />
-          <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="rgba(0,240,255,0.2)" sectionThickness={1} cellThickness={0.5} />
+          <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="#003a40" sectionThickness={1} cellThickness={0.5} />
           <group position={[0, 0.6, 0]}>{buildTree(null)}</group>
         </Canvas>
       </div>

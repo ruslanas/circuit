@@ -357,6 +357,13 @@ const BuckConverterSymbol = ({ size, className, style }) => (
   </svg>
 );
 
+const AeroShellSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <path d="M3 16 Q 12 4 21 16" fill="currentColor" fillOpacity="0.2" />
+    <line x1="3" y1="16" x2="21" y2="16" />
+  </svg>
+);
+
 const COMPONENT_TYPES = {
   BATTERY: { 
     id: 'BATTERY', name: 'DC Source', desc: 'Provides a constant DC voltage.', 
@@ -621,6 +628,12 @@ Example: (I0 AND NOT I1) OR I1`,
     terminals: [],
     defaultProps: {}
   },
+  AERO_SHELL: {
+    id: 'AERO_SHELL', name: 'Aero Shell', desc: 'Aerodynamic structural shell for vehicles or drones. No electrical pins.',
+    icon: AeroShellSymbol, color: '#00f0ff',
+    terminals: [],
+    defaultProps: {}
+  },
   WHEEL: {
     id: 'WHEEL', name: 'Wheel (Motor)', desc: 'DC Motor with a wheel attached.',
     icon: WheelSymbol, color: '#facc15',
@@ -639,7 +652,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS', 'AERO_SHELL']
 };
 
 // Map compound devices to base physical components
@@ -730,6 +743,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'SOLDERING_IRON') return formatUnit(comp.props.resistance, 'Ω');
   if (comp.type === 'WORK_BED') return 'BED';
   if (comp.type === 'CAR_CHASSIS') return 'CHASSIS';
+  if (comp.type === 'AERO_SHELL') return 'SHELL';
   return '';
 };
 
@@ -1362,7 +1376,9 @@ const EXAMPLES = [
         { id: "srv_steer", type: "SERVO", x: 180, y: 340, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
         { id: "resHead", type: "RESISTOR", x: 480, y: 40, rotation: 0, props: { resistance: 100, maxPower: 0.25 } },
         { id: "ledL", type: "LED", x: 620, y: 20, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
-        { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } }
+        { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
+        { id: "shellTop", type: "AERO_SHELL", x: 340, y: 360, rotation: 0, props: {} },
+        { id: "shellBot", type: "AERO_SHELL", x: 480, y: 360, rotation: 0, props: {} }
       ],
       wires: [
         { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
@@ -1396,7 +1412,9 @@ const EXAMPLES = [
         "sw": { "offsetX": 0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
         "pot_steer": { "offsetX": -0.75, "offsetY": 0, "offsetZ": 0, "parentId": "chassis" },
         "ledL": { offsetX: -0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" },
-        "ledR": { offsetX: 0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" }
+        "ledR": { offsetX: 0.85, offsetY: 0.25, offsetZ: -2.1, pitch: -90, parentId: "chassis" },
+        "shellTop": { offsetX: 0, offsetY: 0.3, offsetZ: 0, parentId: "chassis" },
+        "shellBot": { offsetX: 0, offsetY: 0.2, offsetZ: 0, pitch: 180, parentId: "chassis" }
       }
     }
   }
@@ -2539,6 +2557,9 @@ const App = () => {
         else if (c.type === 'CAR_CHASSIS') {
             spice += `* Car Chassis component ${name} omitted (structural only)\n`;
         }
+        else if (c.type === 'AERO_SHELL') {
+            spice += `* Aero Shell component ${name} omitted (structural only)\n`;
+        }
         else if (c.type === 'BUCK_CONVERTER') {
             spice += `* Buck Converter component ${name} omitted (behavioral block)\n`;
         }
@@ -2623,6 +2644,7 @@ const App = () => {
   const getTerminalCoords = (comp, termIdx) => {
     if (!comp) return { x: 0, y: 0 };
     const type = COMPONENT_TYPES[comp.type];
+    if (!type || !type.terminals || !type.terminals[termIdx]) return { x: comp.x, y: comp.y };
     const term = { ...type.terminals[termIdx] };
     const cx = 40; const cy = 30;
 
@@ -2781,7 +2803,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -3550,7 +3572,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}

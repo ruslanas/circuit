@@ -23,7 +23,8 @@ import {
   Undo,
   Redo,
   Box,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Scissors
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
 import Robot3DView from './Robot3DView.jsx';
@@ -703,6 +704,11 @@ const COMPOUND_MODELS = {
 // --- Helper Functions ---
 const snapToGrid = (val) => Math.round(val / GRID_SIZE) * GRID_SIZE;
 
+const linesIntersect = (A, B, C, D) => {
+  const ccw = (p1, p2, p3) => (p3.y - p1.y) * (p2.x - p1.x) > (p2.y - p1.y) * (p3.x - p1.x);
+  return (ccw(A, C, D) !== ccw(B, C, D)) && (ccw(A, B, C) !== ccw(A, B, D));
+};
+
 const formatUnit = (val, unit) => {
   if (val === undefined || val === null || isNaN(val)) return `0 ${unit}`;
   const absVal = Math.abs(val);
@@ -847,7 +853,13 @@ const EXAMPLES = [
         { id: "w7", from: { compId: "sw2", termIdx: 1 }, to: { compId: "hb", termIdx: 3 }, props: { maxCurrent: 5 } },
         { id: "w8", from: { compId: "hb", termIdx: 4 }, to: { compId: "mot", termIdx: 0 }, props: { maxCurrent: 5 } },
         { id: "w9", from: { compId: "hb", termIdx: 5 }, to: { compId: "mot", termIdx: 1 }, props: { maxCurrent: 5 } }
-      ]
+      ],
+      servoConfig: {
+        "bat": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
+        "sw1": { offsetX: -1.5, offsetY: 0, offsetZ: -0.8, parentId: "bat" },
+        "sw2": { offsetX: -1.5, offsetY: 0, offsetZ: 0.8, parentId: "bat" },
+        "mot": { offsetX: 2, offsetY: 0, offsetZ: 0, parentId: "bat" }
+      }
     }
   },
   {
@@ -1366,74 +1378,69 @@ const EXAMPLES = [
         { id: "w_gYn_rgL", from: { compId: "gyro", termIdx: 5 }, to: { compId: "rgL", termIdx: 0 } }
       ],
       servoConfig: {
-        "gyro": { offsetX: 0, offsetY: 2, offsetZ: 0, parentId: null },
+        "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 0, parentId: null },
+        "bat": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: "bed" },
+        "gyro": { offsetX: 0, offsetY: 0.8, offsetZ: 0, parentId: "bat" },
         "propF": { offsetX: 0, offsetY: 0, offsetZ: -2, parentId: "gyro" },
         "propB": { offsetX: 0, offsetY: 0, offsetZ: 2, parentId: "gyro" },
         "propL": { offsetX: -2, offsetY: 0, offsetZ: 0, parentId: "gyro" },
-        "propR": { offsetX: 2, offsetY: 0, offsetZ: 0, parentId: "gyro" },
-        "bed": { offsetX: 0, offsetY: -0.2, offsetZ: 0, parentId: null }
+        "propR": { offsetX: 2, offsetY: 0, offsetZ: 0, parentId: "gyro" }
       }
     }
   },
   {
-    name: "Modern Sports Car (4WD)",
+    name: "Simple 4WD",
     data: {
       components: [
-        { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 5, maxCurrent: 5 } },
-        { id: "sw", type: "SWITCH", x: 180, y: 160, rotation: 0, props: { isOpen: true, maxCurrent: 5 } },
-        { id: "wFL", type: "WHEEL", x: 340, y: 40, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
-        { id: "wFR", type: "WHEEL", x: 340, y: 120, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
-        { id: "wBL", type: "WHEEL", x: 340, y: 200, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
-        { id: "wBR", type: "WHEEL", x: 340, y: 280, rotation: 0, props: { resistance: 10, maxCurrent: 3 } },
-        { id: "gnd", type: "GROUND", x: 480, y: 160, rotation: 0, props: {} },
-        { id: "chassis", type: "X_CHASSIS", x: 180, y: 260, rotation: 0, props: {} },
-        { id: "pot_steer", type: "POTENTIOMETER", x: 60, y: 340, rotation: 0, props: { resistance: 10000, position: 50, maxPower: 0.25 } },
-        { id: "srv_steer", type: "SERVO", x: 180, y: 340, rotation: 0, props: { resistance: 100, sigRes: 1000000, maxCurrent: 1 } },
-        { id: "resHead", type: "RESISTOR", x: 480, y: 40, rotation: 0, props: { resistance: 100, maxPower: 0.25 } },
-        { id: "ledL", type: "LED", x: 620, y: 20, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
-        { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
-        { id: "shellTop", type: "AERO_SHELL", x: 340, y: 360, rotation: 0, props: {} },
-        { id: "shellBot", type: "AERO_SHELL", x: 480, y: 360, rotation: 0, props: {} },
-        { id: "spoiler", type: "AERO_SHELL", x: 620, y: 360, rotation: 0, props: {} },
-        { id: "bed", type: "WORK_BED", x: 740, y: 160, rotation: 0, props: {} }
+        { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 9, maxCurrent: 10 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 260, rotation: 0, props: {} },
+        { id: "btnFwd", type: "PUSH_BUTTON", x: 200, y: 100, rotation: 0, props: { isPressed: false, maxCurrent: 5 } },
+        { id: "btnRev", type: "PUSH_BUTTON", x: 200, y: 180, rotation: 0, props: { isPressed: false, maxCurrent: 5 } },
+        { id: "hb", type: "HBRIDGE", x: 340, y: 140, rotation: 0, props: { pullupRes: 10000, driveRes: 1000, inRes: 1000, beta: 100, maxCurrent: 15 } },
+        { id: "wFL", type: "WHEEL", x: 500, y: 40, rotation: 0, props: { resistance: 50, maxCurrent: 5 } },
+        { id: "wFR", type: "WHEEL", x: 500, y: 120, rotation: 0, props: { resistance: 50, maxCurrent: 5 } },
+        { id: "wBL", type: "WHEEL", x: 500, y: 200, rotation: 0, props: { resistance: 50, maxCurrent: 5 } },
+        { id: "wBR", type: "WHEEL", x: 500, y: 280, rotation: 0, props: { resistance: 50, maxCurrent: 5 } },
+        { id: "chassis", type: "CAR_CHASSIS", x: 640, y: 160, rotation: 0, props: {} },
+        { id: "rFwd", type: "RESISTOR", x: 640, y: 40, rotation: 0, props: { resistance: 330, maxPower: 2 } },
+        { id: "ledFwd", type: "LED", x: 760, y: 40, rotation: 0, props: { color: "#ffffff" } },
+        { id: "rRev", type: "RESISTOR", x: 640, y: 280, rotation: 0, props: { resistance: 330, maxPower: 2 } },
+        { id: "ledRev", type: "LED", x: 760, y: 280, rotation: 0, props: { color: "#ff003c" } }
       ],
       wires: [
-        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w2", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFL", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w3", from: { compId: "sw", termIdx: 1 }, to: { compId: "wFR", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w4", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBL", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w5", from: { compId: "sw", termIdx: 1 }, to: { compId: "wBR", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w6", from: { compId: "wFL", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w7", from: { compId: "wFR", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w8", from: { compId: "wBL", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w9", from: { compId: "wBR", termIdx: 0 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w10", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w11", from: { compId: "bat", termIdx: 0 }, to: { compId: "pot_steer", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w12", from: { compId: "gnd", termIdx: 0 }, to: { compId: "pot_steer", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w13", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv_steer", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w14", from: { compId: "pot_steer", termIdx: 2 }, to: { compId: "srv_steer", termIdx: 1 }, props: { maxCurrent: 5 } },
-        { id: "w15", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv_steer", termIdx: 2 }, props: { maxCurrent: 5 } },
-        { id: "w16", from: { compId: "sw", termIdx: 1 }, to: { compId: "resHead", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w17", from: { compId: "resHead", termIdx: 1 }, to: { compId: "ledL", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w18", from: { compId: "resHead", termIdx: 1 }, to: { compId: "ledR", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w19", from: { compId: "ledL", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } },
-        { id: "w20", from: { compId: "ledR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } }
+        { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "btnFwd", termIdx: 0 } },
+        { id: "w2", from: { compId: "bat", termIdx: 0 }, to: { compId: "btnRev", termIdx: 0 } },
+        { id: "w3", from: { compId: "bat", termIdx: 0 }, to: { compId: "hb", termIdx: 0 } },
+        { id: "w4", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w5", from: { compId: "hb", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w6", from: { compId: "btnFwd", termIdx: 1 }, to: { compId: "hb", termIdx: 2 } },
+        { id: "w7", from: { compId: "btnRev", termIdx: 1 }, to: { compId: "hb", termIdx: 3 } },
+        { id: "w8", from: { compId: "hb", termIdx: 4 }, to: { compId: "wFL", termIdx: 1 } },
+        { id: "w9", from: { compId: "hb", termIdx: 5 }, to: { compId: "wFL", termIdx: 0 } },
+        { id: "w10", from: { compId: "hb", termIdx: 4 }, to: { compId: "wBL", termIdx: 1 } },
+        { id: "w11", from: { compId: "hb", termIdx: 5 }, to: { compId: "wBL", termIdx: 0 } },
+        { id: "w12", from: { compId: "hb", termIdx: 5 }, to: { compId: "wFR", termIdx: 1 } },
+        { id: "w13", from: { compId: "hb", termIdx: 4 }, to: { compId: "wFR", termIdx: 0 } },
+        { id: "w14", from: { compId: "hb", termIdx: 5 }, to: { compId: "wBR", termIdx: 1 } },
+        { id: "w15", from: { compId: "hb", termIdx: 4 }, to: { compId: "wBR", termIdx: 0 } },
+        { id: "w16", from: { compId: "btnFwd", termIdx: 1 }, to: { compId: "rFwd", termIdx: 0 } },
+        { id: "w16b", from: { compId: "rFwd", termIdx: 1 }, to: { compId: "ledFwd", termIdx: 0 } },
+        { id: "w17", from: { compId: "ledFwd", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w18", from: { compId: "btnRev", termIdx: 1 }, to: { compId: "rRev", termIdx: 0 } },
+        { id: "w18b", from: { compId: "rRev", termIdx: 1 }, to: { compId: "ledRev", termIdx: 0 } },
+        { id: "w19", from: { compId: "ledRev", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } }
       ],
       servoConfig: {
-        "chassis": { offsetX: 0, offsetY: 5, offsetZ: 0, parentId: null, scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
-        "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0.833, offsetZ: -2.5, pitch: 180, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "wFL": { offsetX: -1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
-        "wFR": { offsetX: 1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
-        "wBL": { offsetX: -1.4, offsetY: 0, offsetZ: 2.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "wBR": { offsetX: 1.4, offsetY: 0, offsetZ: 2.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "sw": { offsetX: 0.75, offsetY: 1.5, offsetZ: -1.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "pot_steer": { offsetX: -0.75, offsetY: 1.5, offsetZ: -1.5, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "ledL": { offsetX: -1.41, offsetY: 0.41, offsetZ: -3.5, pitch: -90, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "ledR": { offsetX: 1.41, offsetY: 0.41, offsetZ: -3.5, pitch: -90, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
-        "shellTop": { offsetX: 0, offsetY: 0.4, offsetZ: 0.2, parentId: "chassis", scaleX: 1.8, scaleY: 1.0, scaleZ: 2.2 },
-        "shellBot": { offsetX: 0, offsetY: 0.2, offsetZ: 0, pitch: 180, parentId: "chassis", scaleX: 2.0, scaleY: 0.6, scaleZ: 2.6 },
-        "spoiler": { offsetX: 0, offsetY: 1.8, offsetZ: 4.5, pitch: -5, parentId: "chassis", scaleX: 2.0, scaleY: 0.1, scaleZ: 0.6 },
-        "bed": { offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null }
+        "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
+        "bat": { offsetX: 0, offsetY: 0.3, offsetZ: 0, parentId: "chassis", scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
+        "wFL": { offsetX: -1.3, offsetY: -0.2, offsetZ: -1.8, parentId: "chassis" },
+        "wFR": { offsetX: 1.3, offsetY: -0.2, offsetZ: -1.8, yaw: 180, parentId: "chassis" },
+        "wBL": { offsetX: -1.3, offsetY: -0.2, offsetZ: 1.8, parentId: "chassis", scaleX: 1, scaleY: 1, scaleZ: 1 },
+        "wBR": { offsetX: 1.3, offsetY: -0.2, offsetZ: 1.8, yaw: 180, parentId: "chassis", scaleX: 1, scaleY: 1, scaleZ: 1 },
+        "btnFwd": { offsetX: 0, offsetY: 0.6, offsetZ: -0.8, parentId: "bat", scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8 },
+        "btnRev": { offsetX: 0, offsetY: 0.6, offsetZ: 0.8, parentId: "bat", scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8 },
+        "ledFwd": { offsetX: 0, offsetY: 0.3, offsetZ: -2.0, parentId: "chassis" },
+        "ledRev": { offsetX: 0, offsetY: 0.3, offsetZ: 2.0, yaw: 180, parentId: "chassis" }
       }
     }
   }
@@ -1494,6 +1501,10 @@ const App = () => {
   const [viewMode, setViewMode] = useState('2D'); // '2D' | '3D'
   const [isEditMode, setIsEditMode] = useState(false);
   const lastClickRef = useRef({ id: null, time: 0 });
+
+  const [sliceMode, setSliceMode] = useState(false);
+  const [sliceStart, setSliceStart] = useState(null);
+  const [sliceEnd, setSliceEnd] = useState(null);
 
   const [past, setPast] = useState([]);
   const [future, setFuture] = useState([]);
@@ -1845,6 +1856,15 @@ const App = () => {
     if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
+    if (sliceMode && svgRef.current) {
+      const CTM = svgRef.current.getScreenCTM();
+      const startX = (e.clientX - CTM.e) / (CTM.a * zoom) - pan.x;
+      const startY = (e.clientY - CTM.f) / (CTM.d * zoom) - pan.y;
+      setSliceStart({ x: startX, y: startY });
+      setSliceEnd({ x: startX, y: startY });
+      return;
+    }
+
     if (e.target.tagName === 'svg' || e.target.id === 'canvas-bg') {
       if (!e.shiftKey) {
         setSelectedIds([]);
@@ -1882,6 +1902,7 @@ const App = () => {
   };
 
   const handleComponentPointerDown = (e, id) => {
+    if (sliceMode) return;
     e.stopPropagation();
     if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1915,6 +1936,7 @@ const App = () => {
   };
 
   const handleWirePointerDown = (e, id) => {
+    if (sliceMode) return;
     e.stopPropagation();
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     setSelectedWireId(id);
@@ -1929,6 +1951,7 @@ const App = () => {
   };
 
   const handleTerminalPointerDown = (e, compId, termIdx) => {
+    if (sliceMode) return;
     e.stopPropagation();
     e.preventDefault();
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -1989,6 +2012,16 @@ const App = () => {
       }
     }
 
+    if (sliceMode && sliceStart && activePointers.current.size === 1 && !pinchState.current.isPinching) {
+      if (svgRef.current) {
+        const CTM = svgRef.current.getScreenCTM();
+        const endX = (e.clientX - CTM.e) / (CTM.a * zoom) - pan.x;
+        const endY = (e.clientY - CTM.f) / (CTM.d * zoom) - pan.y;
+        setSliceEnd({ x: endX, y: endY });
+      }
+      return;
+    }
+
     if (draggedWaypoint && activePointers.current.size === 1 && !pinchState.current.isPinching) {
       const dx = (e.clientX - draggedWaypoint.startX) / zoom;
       const dy = (e.clientY - draggedWaypoint.startY) / zoom;
@@ -2020,6 +2053,37 @@ const App = () => {
     }
     if (activePointers.current.size === 0) {
       panState.current.isPanning = false;
+    }
+
+    if (sliceMode && sliceStart && sliceEnd) {
+      const wiresToDelete = new Set();
+      wires.forEach(wire => {
+        const compFrom = components.find(c => c.id === wire.from.compId);
+        const compTo = components.find(c => c.id === wire.to.compId);
+        if (!compFrom || !compTo) return;
+        const start = getTerminalCoords(compFrom, wire.from.termIdx);
+        const end = getTerminalCoords(compTo, wire.to.termIdx);
+        const pts = getWirePoints(start, end, wire.waypoints);
+        
+        for (let i = 0; i < pts.length - 1; i++) {
+            if (linesIntersect(sliceStart, sliceEnd, pts[i], pts[i+1])) {
+                wiresToDelete.add(wire.id);
+                break;
+            }
+        }
+      });
+      
+      if (wiresToDelete.size > 0) {
+        pushStateToHistory(components, wires);
+        setWires(prev => prev.filter(w => !wiresToDelete.has(w.id)));
+      }
+      
+      setSliceStart(null);
+      setSliceEnd(null);
+      if (e.target.releasePointerCapture) {
+        try { e.target.releasePointerCapture(e.pointerId); } catch(err) {}
+      }
+      return;
     }
 
     if (draggedWaypoint) {
@@ -2653,6 +2717,9 @@ const App = () => {
         setSpiceViewerCode(null);
         setShowHelp(false);
         setActiveTerminal(null);
+        setSliceMode(false);
+        setSliceStart(null);
+        setSliceEnd(null);
       } else if (e.key.toLowerCase() === 's') {
         setIsSimulating(prev => !prev);
       }
@@ -2825,7 +2892,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2860,6 +2927,8 @@ const App = () => {
         nodeValues[comp.id] = { pitch: comp.props.pitch || 0, roll: comp.props.roll || 0 };
       } else if (comp.type === 'LED') {
         nodeValues[comp.id] = { isLit: isSimulating && simData.active[comp.id], color: comp.props.color };
+      } else if (comp.type === 'BATTERY') {
+        nodeValues[comp.id] = comp.props.voltage !== undefined ? comp.props.voltage : 9;
       }
     });
   }
@@ -3056,6 +3125,14 @@ const App = () => {
               title="Properties (Double-tap item)"
             >
               <Sliders size={14} />
+            </button>
+            <button 
+              onClick={() => { setSliceMode(!sliceMode); setSliceStart(null); setSliceEnd(null); setSelectedIds([]); setSelectedWireId(null); }}
+              disabled={viewMode === '3D'}
+              className={`p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed ${sliceMode ? 'bg-pink-500/20 text-pink-400 border-pink-500/50 shadow-[0_0_8px_rgba(255,0,60,0.4)]' : ''}`}
+              title="Slice Tool (Cut Wires)"
+            >
+              <Scissors size={14} />
             </button>
             <button 
               onClick={deleteSelected}
@@ -3356,6 +3433,16 @@ const App = () => {
                 );
               })()}
 
+              {/* Slice Line */}
+              {sliceMode && sliceStart && sliceEnd && (
+                <line 
+                  x1={sliceStart.x} y1={sliceStart.y} x2={sliceEnd.x} y2={sliceEnd.y}
+                  stroke="#ff003c" strokeWidth="2" strokeDasharray="4 4"
+                  className="pointer-events-none"
+                  filter="url(#neonGlow)"
+                />
+              )}
+
               {/* Components */}
               {components.map(comp => {
                 const type = COMPONENT_TYPES[comp.type];
@@ -3594,7 +3681,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3602,6 +3689,14 @@ const App = () => {
               isEditMode={isEditMode}
               isSimulating={isSimulating}
               burnedNodes={burnedStatesRef.current}
+              onDeleteNode={(id) => {
+                pushStateToHistory(components, wires);
+                setComponents(prev => prev.filter(c => c.id !== id));
+                setWires(prev => prev.filter(w => w.from.compId !== id && w.to.compId !== id));
+                if (selectedIds.includes(id)) {
+                  setSelectedIds(prev => prev.filter(sid => sid !== id));
+                }
+              }}
             />
           </div>
         )}
@@ -4134,6 +4229,8 @@ const App = () => {
                   <li><strong className="text-cyan-400">Multi-Select:</strong> Hold <kbd className="bg-cyan-900/30 px-1 rounded font-mono">Shift</kbd> and click components.</li>
                   <li><strong className="text-cyan-400">Properties:</strong> Double-click a component/wire or use the Sliders button.</li>
                   <li><strong className="text-cyan-400">Wire Routing:</strong> Select a wire and drag the translucent midpoints to create corners. Double-click a corner to remove it.</li>
+                  <li><strong className="text-cyan-400">Slice Tool:</strong> Click the scissors icon and drag a line across wires to instantly cut them.</li>
+                  <li><strong className="text-cyan-400">3D Editor:</strong> Toggle visibility of parts, build parent/child hierarchies, or use the <strong className="text-pink-400">Cut Mesh</strong> tool to slice into solid models.</li>
                 </ul>
               </div>
               <div>
@@ -4150,7 +4247,7 @@ const App = () => {
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Z</kbd> - Undo</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Y</kbd> - Redo</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">S</kbd> - Toggle Simulation</div>
-                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Esc</kbd> - Deselect all / Close dialogs</div>
+                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Esc</kbd> - Deselect / Cancel Tools / Close</div>
                 </div>
               </div>
             </div>

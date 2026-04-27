@@ -2934,7 +2934,7 @@ const App = () => {
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full overflow-hidden relative" style={{ backgroundColor: '#050507', color: '#00f0ff' }}>
+    <div className="flex flex-col md:flex-row h-screen w-full overflow-hidden relative select-none" style={{ backgroundColor: '#050507', color: '#00f0ff' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Share+Tech+Mono&display=swap');
         
@@ -2944,7 +2944,13 @@ const App = () => {
           --dark-bg: #050507;
           --panel-bg: #0b0b10;
         }
-        * { font-family: 'Share Tech Mono', monospace; }
+        * { 
+          font-family: 'Share Tech Mono', monospace; 
+          -webkit-touch-callout: none;
+        }
+        input, textarea, .select-text, .select-text * {
+          -webkit-touch-callout: default;
+        }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes spin {

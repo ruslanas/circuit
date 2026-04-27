@@ -585,9 +585,9 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
   );
 
   if (isSelected && isEditMode) {
-     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} name={`wheel-${node.id}`} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
   }
-  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+  return <group ref={groupRef} name={`wheel-${node.id}`} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
 const CarChassisNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdateOffset, children }) => {
@@ -763,7 +763,83 @@ const AeroShellNode = ({ node, config, isSelected, isEditMode, onSelect, onUpdat
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
-export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, burnedNodes = {} }) {
+const PhysicsRoot = ({ children, isStatic, isSimulating, isEditMode, floorLevel, rootNodeId, nodes, nodeConfig, nodeValues }) => {
+  const groupRef = useRef(null);
+  const velocity = useRef(new THREE.Vector3());
+
+  useFrame((state, delta) => {
+    if (!groupRef.current) return;
+    if (!isSimulating || isEditMode) {
+      groupRef.current.position.set(0, 0, 0);
+      groupRef.current.rotation.set(0, 0, 0);
+      velocity.current.set(0, 0, 0);
+      return;
+    }
+    if (isStatic) return;
+
+    const dt = Math.min(delta, 0.1); // Prevent physics explosions on lag spikes
+    let driveForce = new THREE.Vector3();
+    let hasTraction = false;
+
+    groupRef.current.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(groupRef.current);
+    if (!box.isEmpty() && box.min.y <= floorLevel + 0.1) {
+      hasTraction = true;
+    }
+
+    if (hasTraction) {
+      groupRef.current.traverse((child) => {
+        if (child.name && child.name.startsWith('wheel-')) {
+          const wheelId = child.name.replace('wheel-', '');
+          const speed = nodeValues[wheelId] || 0;
+          if (Math.abs(speed) > 0.01) {
+            const wheelForward = new THREE.Vector3(0, 0, 1).applyQuaternion(child.getWorldQuaternion(new THREE.Quaternion()));
+            driveForce.addScaledVector(wheelForward, speed * 5);
+          }
+        }
+      });
+    }
+
+    velocity.current.y -= 9.81 * dt;
+    velocity.current.addScaledVector(driveForce, dt);
+
+    // Friction
+    if (hasTraction) {
+      velocity.current.x *= Math.pow(0.001, dt);
+      velocity.current.z *= Math.pow(0.001, dt);
+    } else {
+      velocity.current.x *= Math.pow(0.5, dt);
+      velocity.current.z *= Math.pow(0.5, dt);
+    }
+
+    groupRef.current.position.addScaledVector(velocity.current, dt);
+
+    // Simple Steering
+    const steerServo = nodes.find(n => n.type === 'SERVO' && nodeConfig[n.id]?.parentId === rootNodeId);
+    if (steerServo && hasTraction) {
+      const steerAngle = nodeValues[steerServo.id] !== undefined ? nodeValues[steerServo.id] : 90;
+      const turnRate = (steerAngle - 90) * 0.03; 
+      const forwardSpeed = new THREE.Vector3(velocity.current.x, 0, velocity.current.z).length();
+      if (forwardSpeed > 0.1) {
+        const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(groupRef.current.quaternion);
+        const moveDir = Math.sign(velocity.current.dot(fwd)) || 1;
+        groupRef.current.rotation.y -= turnRate * forwardSpeed * dt * moveDir;
+      }
+    }
+
+    groupRef.current.updateMatrixWorld(true);
+    const newBox = new THREE.Box3().setFromObject(groupRef.current);
+    if (!newBox.isEmpty() && newBox.min.y < floorLevel) {
+      groupRef.current.position.y += (floorLevel - newBox.min.y);
+      velocity.current.y = -velocity.current.y * 0.3; // Slight bounce
+      if (Math.abs(velocity.current.y) < 0.5) velocity.current.y = 0;
+    }
+  });
+
+  return <group ref={groupRef}>{children}</group>;
+};
+
+export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, isSimulating, burnedNodes = {} }) {
   const [selectedNode, setSelectedNode] = useState(null);
 
   const checkCycle = (id, targetParentId) => {
@@ -793,6 +869,9 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
     }));
   };
 
+  const hasWorkBed = nodes.some(n => n.type === 'WORK_BED');
+  const floorLevel = hasWorkBed ? 0.2 : 0;
+
   const buildTree = (parentId) => {
     return nodes
       .filter(n => (nodeConfig[n.id]?.parentId || null) === parentId)
@@ -819,7 +898,14 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
         else if (n.type === 'LED') content = <LedNode node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</LedNode>;
         else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
 
-        return content ? <group key={n.id} scale={scale}>{content}</group> : null;
+        const nodeElement = content ? <group key={n.id} scale={scale}>{content}</group> : null;
+        
+        if (parentId === null && nodeElement) {
+          const isStatic = n.type === 'WORK_BED' || n.type === 'GROUND';
+          return <PhysicsRoot key={n.id} isStatic={isStatic} isSimulating={isSimulating} isEditMode={isEditMode} floorLevel={floorLevel} rootNodeId={n.id} nodes={nodes} nodeConfig={nodeConfig} nodeValues={nodeValues}>{nodeElement}</PhysicsRoot>;
+        }
+        
+        return nodeElement;
       });
   };
 

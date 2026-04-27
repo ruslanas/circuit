@@ -1394,7 +1394,8 @@ const EXAMPLES = [
         { id: "ledR", type: "LED", x: 620, y: 80, rotation: 0, props: { forwardVoltage: 2, color: "#ffffff", maxCurrent: 0.04 } },
         { id: "shellTop", type: "AERO_SHELL", x: 340, y: 360, rotation: 0, props: {} },
         { id: "shellBot", type: "AERO_SHELL", x: 480, y: 360, rotation: 0, props: {} },
-        { id: "spoiler", type: "AERO_SHELL", x: 620, y: 360, rotation: 0, props: {} }
+        { id: "spoiler", type: "AERO_SHELL", x: 620, y: 360, rotation: 0, props: {} },
+        { id: "bed", type: "WORK_BED", x: 740, y: 160, rotation: 0, props: {} }
       ],
       wires: [
         { id: "w1", from: { compId: "bat", termIdx: 0 }, to: { compId: "sw", termIdx: 0 }, props: { maxCurrent: 5 } },
@@ -1419,7 +1420,7 @@ const EXAMPLES = [
         { id: "w20", from: { compId: "ledR", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 }, props: { maxCurrent: 5 } }
       ],
       servoConfig: {
-        "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null, scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
+        "chassis": { offsetX: 0, offsetY: 5, offsetZ: 0, parentId: null, scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
         "srv_steer": { axis: "Y", offsetX: 0, offsetY: 0.833, offsetZ: -2.5, pitch: 180, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
         "wFL": { offsetX: -1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
         "wFR": { offsetX: 1.4, offsetY: -0.25, offsetZ: 0, pitch: 180, parentId: "srv_steer" },
@@ -1431,7 +1432,8 @@ const EXAMPLES = [
         "ledR": { offsetX: 1.41, offsetY: 0.41, offsetZ: -3.5, pitch: -90, parentId: "chassis", scaleX: 1.667, scaleY: 1.667, scaleZ: 1.667 },
         "shellTop": { offsetX: 0, offsetY: 0.4, offsetZ: 0.2, parentId: "chassis", scaleX: 1.8, scaleY: 1.0, scaleZ: 2.2 },
         "shellBot": { offsetX: 0, offsetY: 0.2, offsetZ: 0, pitch: 180, parentId: "chassis", scaleX: 2.0, scaleY: 0.6, scaleZ: 2.6 },
-        "spoiler": { offsetX: 0, offsetY: 1.8, offsetZ: 4.5, pitch: -5, parentId: "chassis", scaleX: 2.0, scaleY: 0.1, scaleZ: 0.6 }
+        "spoiler": { offsetX: 0, offsetY: 1.8, offsetZ: 4.5, pitch: -5, parentId: "chassis", scaleX: 2.0, scaleY: 0.1, scaleZ: 0.6 },
+        "bed": { offsetX: 0, offsetY: 0, offsetZ: 0, parentId: null }
       }
     }
   }
@@ -3598,6 +3600,7 @@ const App = () => {
               setNodeConfig={setServoConfig}
               onUpdateProp={(id, key, val) => setComponents(prev => prev.map(c => c.id === id ? { ...c, props: { ...c.props, [key]: val } } : c))}
               isEditMode={isEditMode}
+              isSimulating={isSimulating}
               burnedNodes={burnedStatesRef.current}
             />
           </div>

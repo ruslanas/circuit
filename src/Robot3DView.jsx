@@ -1051,7 +1051,19 @@ const PhysicsRoot = ({ children, isStatic, isSimulating, isEditMode, floorLevel,
   return <group ref={groupRef}>{children}</group>;
 };
 
-export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConfig, onUpdateProp, isEditMode, isSimulating, burnedNodes = {}, onDeleteNode }) {
+export default function Robot3DView({
+  nodes,
+  nodeValues,
+  nodeConfig,
+  setNodeConfig,
+  onUpdateProp,
+  isEditMode,
+  isSimulating,
+  burnedNodes = {},
+  onDeleteNode,
+  selectedNodeId,
+  onSelectNode
+}) {
   const [selectedNode, setSelectedNode] = useState(null);
   const [collapsedNodes, setCollapsedNodes] = useState({});
   const [showTrack, setShowTrack] = useState(false);
@@ -1064,18 +1076,12 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'Escape') {
         setIsCutting(false);
-        setSelectedNode(null);
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedNode) {
-        if (onDeleteNode) {
-          onDeleteNode(selectedNode);
-          setSelectedNode(null);
-        }
-      } else if (selectedNode && isEditMode) {
+      } else if (selectedNodeId && isEditMode) {
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown'].includes(e.key)) {
           e.preventDefault(); // Prevent camera panning/scrolling
           const step = e.shiftKey ? 0.5 : 0.1;
           setNodeConfig(prev => {
-            const cfg = prev[selectedNode] || {};
+            const cfg = prev[selectedNodeId] || {};
             let { offsetX: x = 0, offsetY: y = 0, offsetZ: z = 0 } = cfg;
             
             if (e.key === 'ArrowLeft') x -= step;
@@ -1093,7 +1099,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
             
             return {
               ...prev,
-              [selectedNode]: {
+              [selectedNodeId]: {
                 ...cfg,
                 offsetX: parseFloat(x.toFixed(2)),
                 offsetY: parseFloat(y.toFixed(2)),
@@ -1106,7 +1112,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCutting, selectedNode, onDeleteNode, isEditMode, setNodeConfig]);
+  }, [isCutting, selectedNodeId, isEditMode, setNodeConfig]);
 
   const checkCycle = (id, targetParentId) => {
     let curr = targetParentId;
@@ -1145,27 +1151,27 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       .map(n => {
         const cfg = nodeConfig[n.id] || {};
         const val = nodeValues[n.id];
-        const isSelected = selectedNode === n.id;
+        const isSelected = selectedNodeId === n.id;
         const scale = [cfg.scaleX ?? 1, cfg.scaleY ?? 1, cfg.scaleZ ?? 1];
         const isVisible = cfg.visible !== false;
         
         let content = null;
-        if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
-        else if (n.type === 'POTENTIOMETER') content = <PotentiometerNode node={n} config={cfg} position={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</PotentiometerNode>;
-        else if (n.type === 'PUSH_BUTTON') content = <ButtonNode node={n} config={cfg} isPressed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</ButtonNode>;
-        else if (n.type === 'SWITCH') content = <SwitchNode node={n} config={cfg} isOpen={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</SwitchNode>;
-        else if (n.type === 'SEVEN_SEGMENT') content = <SevenSegmentNode node={n} config={cfg} segments={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SevenSegmentNode>;
-        else if (n.type === 'SOLDERING_IRON') content = <SolderingIronNode node={n} config={cfg} isHeated={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SolderingIronNode>;
-        else if (n.type === 'MOTOR') content = <MotorNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</MotorNode>;
-        else if (n.type === 'PROPELLER') content = <PropellerNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</PropellerNode>;
-        else if (n.type === 'GYROSCOPE') content = <GyroscopeNode node={n} config={cfg} pitch={val?.pitch} roll={val?.roll} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</GyroscopeNode>;
-        else if (n.type === 'WORK_BED') content = <WorkBedNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WorkBedNode>;
-        else if (n.type === 'WHEEL') content = <WheelNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WheelNode>;
-        else if (n.type === 'CAR_CHASSIS') content = <CarChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</CarChassisNode>;
-        else if (n.type === 'X_CHASSIS') content = <XChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</XChassisNode>;
-        else if (n.type === 'LED') content = <LedNode node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</LedNode>;
-        else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
-        else if (n.type === 'BATTERY') content = <BatteryNode node={n} config={cfg} voltage={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={setSelectedNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</BatteryNode>;
+        if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
+        else if (n.type === 'POTENTIOMETER') content = <PotentiometerNode node={n} config={cfg} position={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</PotentiometerNode>;
+        else if (n.type === 'PUSH_BUTTON') content = <ButtonNode node={n} config={cfg} isPressed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</ButtonNode>;
+        else if (n.type === 'SWITCH') content = <SwitchNode node={n} config={cfg} isOpen={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</SwitchNode>;
+        else if (n.type === 'SEVEN_SEGMENT') content = <SevenSegmentNode node={n} config={cfg} segments={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SevenSegmentNode>;
+        else if (n.type === 'SOLDERING_IRON') content = <SolderingIronNode node={n} config={cfg} isHeated={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</SolderingIronNode>;
+        else if (n.type === 'MOTOR') content = <MotorNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</MotorNode>;
+        else if (n.type === 'PROPELLER') content = <PropellerNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</PropellerNode>;
+        else if (n.type === 'GYROSCOPE') content = <GyroscopeNode node={n} config={cfg} pitch={val?.pitch} roll={val?.roll} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</GyroscopeNode>;
+        else if (n.type === 'WORK_BED') content = <WorkBedNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WorkBedNode>;
+        else if (n.type === 'WHEEL') content = <WheelNode node={n} config={cfg} speed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</WheelNode>;
+        else if (n.type === 'CAR_CHASSIS') content = <CarChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</CarChassisNode>;
+        else if (n.type === 'X_CHASSIS') content = <XChassisNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</XChassisNode>;
+        else if (n.type === 'LED') content = <LedNode node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</LedNode>;
+        else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
+        else if (n.type === 'BATTERY') content = <BatteryNode node={n} config={cfg} voltage={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</BatteryNode>;
 
         const nodeElement = content ? <group key={n.id} scale={scale}>{content}</group> : null;
         
@@ -1205,7 +1211,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
         
         {nodes.map((n, idx) => {
           const cfg = nodeConfig[n.id] || {};
-          const isSelected = selectedNode === n.id;
+          const isSelected = selectedNodeId === n.id;
           const isCollapsed = collapsedNodes[n.id] !== undefined ? collapsedNodes[n.id] : !isSelected;
           
           return (
@@ -1216,7 +1222,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
                 if (isSelected) {
                   setCollapsedNodes(prev => ({ ...prev, [n.id]: !isCollapsed }));
                 } else {
-                  setSelectedNode(n.id);
+                  onSelectNode(n.id);
                   setCollapsedNodes(prev => ({ ...prev, [n.id]: false }));
                 }
               }}
@@ -1228,7 +1234,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
                 </div>
                 <div className="flex items-center gap-1">
                   <button onClick={(e) => { e.stopPropagation(); updateConfig(n.id, 'visible', cfg.visible === false); }} className={`px-1.5 py-0.5 rounded-sm text-[8px] font-bold border transition-colors ${cfg.visible !== false ? 'bg-cyan-900/50 text-cyan-300 border-cyan-500/50 hover:bg-cyan-800/50' : 'bg-red-900/50 text-red-300 border-red-500/50 hover:bg-red-800/50'}`} title="Toggle Visibility">{cfg.visible !== false ? 'VISIBLE' : 'HIDDEN'}</button>
-                  <button onClick={(e) => { e.stopPropagation(); if(onDeleteNode) onDeleteNode(n.id); if(selectedNode === n.id) setSelectedNode(null); }} className="px-1.5 py-0.5 rounded-sm text-[8px] font-bold border transition-colors bg-red-900/50 text-red-300 border-red-500/50 hover:bg-red-800/50" title="Delete Component">DEL</button>
+                <button onClick={(e) => { e.stopPropagation(); if(onDeleteNode) onDeleteNode(n.id); if(selectedNodeId === n.id) onSelectNode(null); }} className="px-1.5 py-0.5 rounded-sm text-[8px] font-bold border transition-colors bg-red-900/50 text-red-300 border-red-500/50 hover:bg-red-800/50" title="Delete Component">DEL</button>
                 </div>
               </div>
               
@@ -1271,7 +1277,7 @@ export default function Robot3DView({ nodes, nodeValues, nodeConfig, setNodeConf
       )}
 
       <div className="flex-1 bg-[#050507] relative">
-        <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => setSelectedNode(null)}>
+        <Canvas camera={{ position: [5, 5, 8], fov: 50 }} onPointerMissed={() => onSelectNode(null)}>
           <ambientLight intensity={0.5} /><directionalLight position={[10, 10, 5]} intensity={1.5} /><OrbitControls makeDefault />
           <MeshCutter isCutting={isCutting} cutMode={cutMode} targetRef={sceneGroupRef} nodesLength={nodes.length} />
           <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="#003a40" sectionThickness={1} cellThickness={0.5} />

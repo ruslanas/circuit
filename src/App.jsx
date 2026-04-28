@@ -785,6 +785,9 @@ const App = () => {
       }));
       setComponents(prev => [...prev, ...customComps]);
       setWires(prev => [...prev, ...customWires]);
+        if (selectedIds.length === 1 && customComps.length > 0) {
+          setServoConfig(prev => ({ ...prev, [customComps[0].id]: { ...prev[customComps[0].id], parentId: selectedIds[0] } }));
+        }
       setSelectedIds(customComps.map(c => c.id));
       setSelectedWireId(null);
       setIsLibraryOpen(false);
@@ -800,7 +803,10 @@ const App = () => {
       rotation: 0,
       props: { ...type.defaultProps }
     };
-    setComponents([...components, newComp]);
+    setComponents(prev => [...prev, newComp]);
+      if (selectedIds.length === 1) {
+        setServoConfig(prev => ({ ...prev, [newComp.id]: { parentId: selectedIds[0] } }));
+      }
     setSelectedIds([newComp.id]);
     setSelectedWireId(null);
     setIsPropDialogOpen(false);
@@ -841,6 +847,9 @@ const App = () => {
         }));
         setComponents(prev => [...prev, ...customComps]);
         setWires(prev => [...prev, ...customWires]);
+        if (selectedIds.length === 1 && customComps.length > 0) {
+          setServoConfig(prev => ({ ...prev, [customComps[0].id]: { ...prev[customComps[0].id], parentId: selectedIds[0] } }));
+        }
         setSelectedIds(customComps.map(c => c.id));
         setSelectedWireId(null);
         setIsLibraryOpen(false);
@@ -857,6 +866,9 @@ const App = () => {
         props: { ...type.defaultProps }
       };
       setComponents(prev => [...prev, newComp]);
+        if (selectedIds.length === 1) {
+          setServoConfig(prev => ({ ...prev, [newComp.id]: { parentId: selectedIds[0] } }));
+        }
       setSelectedIds([newComp.id]);
       setSelectedWireId(null);
       setIsPropDialogOpen(false);
@@ -2716,6 +2728,8 @@ const App = () => {
                   setSelectedIds(prev => prev.filter(sid => sid !== id));
                 }
               }}
+            selectedNodeId={selectedIds.length === 1 ? selectedIds[0] : null}
+            onSelectNode={(id) => setSelectedIds(id ? [id] : [])}
             />
           </div>
         )}

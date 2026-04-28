@@ -785,9 +785,21 @@ const App = () => {
       }));
       setComponents(prev => [...prev, ...customComps]);
       setWires(prev => [...prev, ...customWires]);
-        if (selectedIds.length === 1 && customComps.length > 0) {
-          setServoConfig(prev => ({ ...prev, [customComps[0].id]: { ...prev[customComps[0].id], parentId: selectedIds[0] } }));
-        }
+        setServoConfig(prev => {
+          const newConfig = { ...prev };
+          if (type.servoConfig) {
+            Object.entries(type.servoConfig).forEach(([oldId, cfg]) => {
+              const newId = `${newIdPrefix}-${oldId}`;
+              const newParentId = cfg.parentId ? `${newIdPrefix}-${cfg.parentId}` : null;
+              newConfig[newId] = { ...cfg, parentId: newParentId };
+            });
+          }
+          if (selectedIds.length === 1 && customComps.length > 0) {
+            const firstId = customComps[0].id;
+            newConfig[firstId] = { ...(newConfig[firstId] || {}), parentId: selectedIds[0] };
+          }
+          return newConfig;
+        });
       setSelectedIds(customComps.map(c => c.id));
       setSelectedWireId(null);
       setIsLibraryOpen(false);
@@ -847,9 +859,21 @@ const App = () => {
         }));
         setComponents(prev => [...prev, ...customComps]);
         setWires(prev => [...prev, ...customWires]);
-        if (selectedIds.length === 1 && customComps.length > 0) {
-          setServoConfig(prev => ({ ...prev, [customComps[0].id]: { ...prev[customComps[0].id], parentId: selectedIds[0] } }));
-        }
+        setServoConfig(prev => {
+          const newConfig = { ...prev };
+          if (type.servoConfig) {
+            Object.entries(type.servoConfig).forEach(([oldId, cfg]) => {
+              const newId = `${newIdPrefix}-${oldId}`;
+              const newParentId = cfg.parentId ? `${newIdPrefix}-${cfg.parentId}` : null;
+              newConfig[newId] = { ...cfg, parentId: newParentId };
+            });
+          }
+          if (selectedIds.length === 1 && customComps.length > 0) {
+            const firstId = customComps[0].id;
+            newConfig[firstId] = { ...(newConfig[firstId] || {}), parentId: selectedIds[0] };
+          }
+          return newConfig;
+        });
         setSelectedIds(customComps.map(c => c.id));
         setSelectedWireId(null);
         setIsLibraryOpen(false);
@@ -1424,13 +1448,24 @@ const App = () => {
   };
 
   const handleSaveToLibrary = () => {
-    if (selectedIds.length === 0) return;
+    if (components.length === 0) return;
 
     const name = prompt("Enter a name for the new library component:", "My Custom Chip");
     if (!name) return;
 
-    const selectionSet = new Set(selectedIds);
-    const selectedComps = components.filter(c => selectionSet.has(c.id));
+    let selectedComps;
+    let internalWires;
+
+    if (selectedIds.length > 0) {
+      const selectionSet = new Set(selectedIds);
+      selectedComps = components.filter(c => selectionSet.has(c.id));
+      internalWires = wires.filter(w => 
+        selectionSet.has(w.from.compId) && selectionSet.has(w.to.compId)
+      );
+    } else {
+      selectedComps = components;
+      internalWires = wires;
+    }
 
     if (selectedComps.length === 0) return;
 
@@ -1447,10 +1482,17 @@ const App = () => {
       y: c.y - minY,
     }));
 
-    // Find internal wires
-    const internalWires = wires.filter(w => 
-      selectionSet.has(w.from.compId) && selectionSet.has(w.to.compId)
-    );
+    const internalServoConfig = {};
+    selectedComps.forEach(c => {
+      if (servoConfig[c.id]) {
+        const cfg = { ...servoConfig[c.id] };
+        // If the parent linkage isn't inside our selection, clear it
+        if (cfg.parentId && !selectedComps.some(sc => sc.id === cfg.parentId)) {
+          cfg.parentId = null;
+        }
+        internalServoConfig[c.id] = cfg;
+      }
+    });
 
     // NOTE: For simplicity, this version doesn't create external terminals for the new component.
     // It saves the selection as a macro that can be placed and then wired up manually.
@@ -1461,6 +1503,7 @@ const App = () => {
       desc: `Custom component with ${selectedComps.length} parts.`,
       components: normalizedComps,
       wires: internalWires,
+      servoConfig: internalServoConfig,
       terminals: []
     };
 
@@ -2143,9 +2186,9 @@ const App = () => {
             </button>
             <button 
               onClick={handleSaveToLibrary}
-              disabled={selectedIds.length === 0}
+              disabled={components.length === 0}
               className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Save Selection to Library"
+              title={selectedIds.length > 0 ? "Save Selection to Library" : "Save Circuit to Library"}
             >
               <Save size={14} />
             </button>

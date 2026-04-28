@@ -653,5 +653,614 @@ export const EXAMPLES = [
         "ledRev": { offsetX: 0, offsetY: 0.3, offsetZ: 2.0, yaw: 180, parentId: "chassis" }
       }
     }
+  },
+  {
+    name: "3D RC Car",
+    data: {
+      "components": [
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+          "type": "BATTERY",
+          "x": 150,
+          "y": 250,
+          "rotation": 90,
+          "props": {
+            "voltage": 96,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-gnd",
+          "type": "GROUND",
+          "x": 150,
+          "y": 420,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnFwd",
+          "type": "PUSH_BUTTON",
+          "x": 370,
+          "y": 240,
+          "rotation": 0,
+          "props": {
+            "isPressed": false,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnRev",
+          "type": "PUSH_BUTTON",
+          "x": 350,
+          "y": 490,
+          "rotation": 0,
+          "props": {
+            "isPressed": false,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+          "type": "HBRIDGE",
+          "x": 530,
+          "y": 240,
+          "rotation": 0,
+          "props": {
+            "pullupRes": 10000,
+            "driveRes": 1000,
+            "inRes": 10000,
+            "beta": 10000,
+            "maxCurrent": 15
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL",
+          "type": "WHEEL",
+          "x": 810,
+          "y": 270,
+          "rotation": 90,
+          "props": {
+            "resistance": 50,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR",
+          "type": "WHEEL",
+          "x": 730,
+          "y": 270,
+          "rotation": 90,
+          "props": {
+            "resistance": 50,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBL",
+          "type": "WHEEL",
+          "x": 880,
+          "y": 270,
+          "rotation": 90,
+          "props": {
+            "resistance": 50,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR",
+          "type": "WHEEL",
+          "x": 650,
+          "y": 270,
+          "rotation": 90,
+          "props": {
+            "resistance": 50,
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis",
+          "type": "CAR_CHASSIS",
+          "x": 810,
+          "y": 160,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rFwd",
+          "type": "RESISTOR",
+          "x": 410,
+          "y": 330,
+          "rotation": 90,
+          "props": {
+            "resistance": 330,
+            "maxPower": 2
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledFwd",
+          "type": "LED",
+          "x": 410,
+          "y": 430,
+          "rotation": 90,
+          "props": {
+            "forwardVoltage": 2,
+            "color": "#ffffff",
+            "maxCurrent": 0.04
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rRev",
+          "type": "RESISTOR",
+          "x": 430,
+          "y": 530,
+          "rotation": 0,
+          "props": {
+            "resistance": 330,
+            "maxPower": 2
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledRev",
+          "type": "LED",
+          "x": 470,
+          "y": 650,
+          "rotation": 90,
+          "props": {
+            "forwardVoltage": 2,
+            "color": "#ff003c",
+            "maxCurrent": 0.04
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-85341e54-4213-4bf5-be42-d3d9ce40ea8b",
+          "type": "AERO_SHELL",
+          "x": 230,
+          "y": 150,
+          "rotation": 90,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-04c1e90d-3308-439a-a676-bfbcb050e9ff",
+          "type": "BUCK_CONVERTER",
+          "x": 250,
+          "y": 240,
+          "rotation": 0,
+          "props": {
+            "targetVoltage": 5,
+            "maxCurrent": 2,
+            "maxVoltage": 220
+          }
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-075bade7-0d3f-47da-b3cb-95a4c53fe8d0",
+          "type": "GROUND",
+          "x": 250,
+          "y": 420,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-aa0ef4cb-9d43-4c08-991d-ca8d1a90b26b",
+          "type": "GROUND",
+          "x": 530,
+          "y": 500,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-a5cba74b-fba7-443c-8ac0-6c9f7992317b",
+          "type": "GROUND",
+          "x": 470,
+          "y": 740,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-5998c9c8-4712-4416-9528-8f28ec1a805e",
+          "type": "AERO_SHELL",
+          "x": 170,
+          "y": 150,
+          "rotation": 0,
+          "props": {}
+        },
+        {
+          "id": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-7fe81f86-f871-4178-a8bf-30b712e18c81",
+          "type": "GROUND",
+          "x": 530,
+          "y": 380,
+          "rotation": 0,
+          "props": {}
+        }
+      ],
+      "wires": [
+        {
+          "id": "7d2de71d-a7b2-4de3-8e3c-ba151bfac7ec",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+            "termIdx": 0
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "fc5fef86-55e2-4f61-aec0-55aac12bcde5",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-gnd",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "196fb7b9-b9af-4adc-8b0b-854194f62e0d",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnFwd",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 2
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "34f27ece-2529-4711-acf8-5beffdad005c",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnRev",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 3
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "f626311b-88cc-411b-852a-489b16324f03",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 5
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR",
+            "termIdx": 1
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "bd4f995a-f01c-4849-b8b5-ac517831cf48",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 4
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "a5175e91-6d33-49f9-b9c0-0cf8114a8e10",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnFwd",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rFwd",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "16f108ab-2ee4-45fb-8511-dda0c0b3ede1",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rFwd",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledFwd",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "ac6ef8b1-a44b-48c0-86f1-82b8e1825122",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnRev",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rRev",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "5d2f1d5b-ac12-4b1c-a27f-1d323ac0bd6b",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-rRev",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledRev",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "e5fdba29-5a21-4899-abd0-e6e42c5b9274",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+            "termIdx": 0
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-04c1e90d-3308-439a-a676-bfbcb050e9ff",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "242d05ac-2039-4ff2-8c57-6f2986cc8f6f",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-04c1e90d-3308-439a-a676-bfbcb050e9ff",
+            "termIdx": 2
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnFwd",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "db691cb5-99ed-4642-874d-098b662e6abb",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-04c1e90d-3308-439a-a676-bfbcb050e9ff",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-075bade7-0d3f-47da-b3cb-95a4c53fe8d0",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "a2bd61b8-6658-4e07-8e41-70b27d6c6d9a",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-04c1e90d-3308-439a-a676-bfbcb050e9ff",
+            "termIdx": 2
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnRev",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "f0112ba2-27d9-4422-aec2-ead1d75a75d0",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledFwd",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-aa0ef4cb-9d43-4c08-991d-ca8d1a90b26b",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "9ad1f9ed-8bcf-4938-be36-ca6364adc22b",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledRev",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-a5cba74b-fba7-443c-8ac0-6c9f7992317b",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "0da95779-7a4a-4a4d-9ed7-eeb79e4ed9af",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-hb",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-7fe81f86-f871-4178-a8bf-30b712e18c81",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "e2df3a17-7178-438c-9f90-e5d8bb698ae7",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR",
+            "termIdx": 0
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "11dc0e8f-f6bb-4ab1-964e-24033568adf9",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR",
+            "termIdx": 0
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "255c229a-aeed-4d89-9a94-3ea776de0954",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL",
+            "termIdx": 0
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBL",
+            "termIdx": 0
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "89102fe4-c99a-4a41-9619-e1c99fba8966",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR",
+            "termIdx": 1
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "bb5fb9e1-f76c-4d74-9423-e16d57016813",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL",
+            "termIdx": 1
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        },
+        {
+          "id": "690b49bf-718c-4abf-9aee-af430ae7413c",
+          "from": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL",
+            "termIdx": 1
+          },
+          "to": {
+            "compId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBL",
+            "termIdx": 1
+          },
+          "props": {
+            "maxCurrent": 5
+          }
+        }
+      ],
+      "servoConfig": {
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis",
+          "offsetY": 0,
+          "offsetX": 0,
+          "offsetZ": 1.5
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnFwd": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+          "offsetY": 0,
+          "offsetX": 0.5
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-btnRev": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+          "offsetX": -0.5
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFL": {
+          "offsetY": 0,
+          "offsetX": -2,
+          "offsetZ": -2,
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis"
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wFR": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis",
+          "offsetY": 0,
+          "offsetX": 2,
+          "offsetZ": -2
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBL": {
+          "offsetX": -2,
+          "offsetZ": 2,
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis"
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-wBR": {
+          "offsetX": 2,
+          "offsetZ": 2,
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis"
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis": {
+          "parentId": null,
+          "offsetY": 0
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledFwd": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+          "offsetY": 0,
+          "offsetZ": -2,
+          "offsetX": 1
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-ledRev": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-bat",
+          "offsetZ": -2,
+          "offsetX": -1
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-85341e54-4213-4bf5-be42-d3d9ce40ea8b": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis",
+          "visible": true,
+          "offsetY": 0
+        },
+        "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-5998c9c8-4712-4416-9528-8f28ec1a805e": {
+          "parentId": "35987573-126e35d7-ae9c0f72-09b61946-49f2622c-chassis",
+          "yaw": 0,
+          "roll": 180,
+          "visible": true
+        }
+      }
+    }
   }
 ];

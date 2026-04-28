@@ -1,5 +1,6 @@
 export const EXAMPLES = [
   {
+    category: "Basic Electronics",
     name: "Bridge Rectifier",
     data: {
       components: [
@@ -28,6 +29,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Oscillators & Timers",
     name: "LED PWM Flasher",
     data: {
       components: [
@@ -43,6 +45,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Motors & Power",
     name: "H-Bridge Motor Drive",
     data: {
       components: [
@@ -73,6 +76,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Basic Electronics",
     name: "Analog RC Filter",
     data: {
       components: [
@@ -91,6 +95,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Logic & Digital",
     name: "Logic: AND Gate (NPN)",
     data: {
       components: [
@@ -122,6 +127,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Logic & Digital",
     name: "Logic: OR Gate (NPN)",
     data: {
       components: [
@@ -154,6 +160,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Logic & Digital",
     name: "Logic: NOT Gate (Inverter)",
     data: {
       components: [
@@ -179,6 +186,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Motors & Power",
     name: "PNP Motor Controller",
     data: {
       components: [
@@ -200,6 +208,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Motors & Power",
     name: "PWM Controlled H-Bridge",
     data: {
       components: [
@@ -222,6 +231,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Basic Electronics",
     name: "AC Transformer Step-Down",
     data: {
       components: [
@@ -242,6 +252,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Oscillators & Timers",
     name: "555 Astable Oscillator",
     data: {
       components: [
@@ -275,6 +286,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Oscillators & Timers",
     name: "Op-Amp Oscillator",
     data: {
       components: [
@@ -307,6 +319,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Logic & Digital",
     name: "Shift Register with Clock",
     data: {
       components: [
@@ -348,6 +361,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "Logic & Digital",
     name: "RAM Memory Cell (4x1)",
     data: {
       components: [
@@ -379,6 +393,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "3D Robot Arm Linkage",
     data: {
       components: [
@@ -423,6 +438,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "3D Soldering Robot Arm",
     data: {
       components: [
@@ -477,6 +493,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "Auto-Soldering: Corner Sweep",
     data: {
       components: [
@@ -518,6 +535,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "Quadrocopter Auto-Leveling",
     data: {
       components: [
@@ -599,6 +617,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "Simple 4WD",
     data: {
       components: [
@@ -655,6 +674,7 @@ export const EXAMPLES = [
     }
   },
   {
+    category: "3D & Robotics",
     name: "3D RC Car",
     data: {
       "components": [

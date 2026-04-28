@@ -510,6 +510,7 @@ const App = () => {
   const [loadedExampleTitle, setLoadedExampleTitle] = useState("");
   const [spiceViewerCode, setSpiceViewerCode] = useState(null);
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [expandedExampleGroups, setExpandedExampleGroups] = useState({});
   const [showHelp, setShowHelp] = useState(false);
   const [viewMode, setViewMode] = useState('2D'); // '2D' | '3D'
   const [isEditMode, setIsEditMode] = useState(false);
@@ -1513,6 +1514,13 @@ const App = () => {
 
   const toggleGroup = (groupName) => {
     setCollapsedGroups(prev => ({
+      ...prev,
+      [groupName]: !prev[groupName]
+    }));
+  };
+
+  const toggleExampleGroup = (groupName) => {
+    setExpandedExampleGroups(prev => ({
       ...prev,
       [groupName]: !prev[groupName]
     }));
@@ -3270,15 +3278,31 @@ const App = () => {
               </h3>
               <button onClick={() => setIsLibraryOpen(false)} className="p-2 md:p-1.5 cyber-button cyber-button-danger rounded-sm">✕</button>
             </div>
-            <div className="flex-1 overflow-auto p-2 bg-[#050507] flex flex-col gap-1">
-              {EXAMPLES.map((ex, i) => (
-                <button 
-                  key={i} 
-                  onClick={() => loadExample(ex.data, ex.name)} 
-                  className="text-left px-3 py-2.5 text-[11px] md:text-xs cyber-button rounded-sm w-full truncate border border-cyan-900/30 hover:border-cyan-500"
-                >
-                  {ex.name}
-                </button>
+            <div className="flex-1 overflow-auto p-2 bg-[#050507] flex flex-col gap-2">
+              {Object.entries(EXAMPLES.reduce((acc, ex) => {
+                const cat = ex.category || "Other";
+                if (!acc[cat]) acc[cat] = [];
+                acc[cat].push(ex);
+                return acc;
+              }, {})).map(([category, items]) => (
+                <div key={category} className="flex flex-col gap-1">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer group px-1 mt-1 mb-0.5"
+                    onClick={() => toggleExampleGroup(category)}
+                  >
+                    <h4 className="text-[10px] font-bold text-cyan-600/70 uppercase tracking-widest group-hover:text-cyan-500 transition-colors">{category}</h4>
+                    {expandedExampleGroups[category] ? <ChevronDown size={12} className="text-cyan-700" /> : <ChevronRight size={12} className="text-cyan-700" />}
+                  </div>
+                  {expandedExampleGroups[category] && items.map((ex, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => loadExample(ex.data, ex.name)} 
+                      className="text-left px-3 py-2.5 text-[11px] md:text-xs cyber-button rounded-sm w-full truncate border border-cyan-900/30 hover:border-cyan-500"
+                    >
+                      {ex.name}
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
           </div>

@@ -1841,13 +1841,87 @@ const App = () => {
         setSliceStart(null);
         setSliceEnd(null);
       } else if (e.key.toLowerCase() === 's') {
-        setIsSimulating(prev => !prev);
+        const hasSliders = components.some(n => ['POTENTIOMETER', 'GYROSCOPE'].includes(n.type));
+        if (!hasSliders) setIsSimulating(prev => !prev);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedIds, selectedWireId, components, wires, past, future]);
+
+  // --- Live Control Keyboard Shortcuts ---
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const key = e.key.toLowerCase();
+      
+      setComponents(prev => {
+        const iNodes = prev.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER', 'GYROSCOPE'].includes(n.type));
+        let bIdx = 0; let aIdx = 0;
+        let updated = false;
+        let nextComps = prev.map(c => ({...c, props: {...c.props}}));
+
+        iNodes.forEach(n => {
+          const comp = nextComps.find(x => x.id === n.id);
+          if (!comp) return;
+
+          if (n.type === 'SWITCH') {
+            const bKey = ['1','2','3','4','5','6','7','8','9','0'][bIdx++];
+            if (key === bKey && !e.repeat) { comp.props.isOpen = !comp.props.isOpen; updated = true; }
+          } else if (n.type === 'PUSH_BUTTON') {
+            const bKey = ['1','2','3','4','5','6','7','8','9','0'][bIdx++];
+            if (key === bKey && !comp.props.isPressed && !e.repeat) { comp.props.isPressed = true; updated = true; }
+          } else if (n.type === 'POTENTIOMETER') {
+            const aKey = [{up:'w',down:'s'},{up:'e',down:'d'},{up:'r',down:'f'},{up:'t',down:'g'},{up:'y',down:'h'}][aIdx++] || {};
+            if (key === aKey.up) { comp.props.position = Math.min(100, (comp.props.position || 0) + 5); updated = true; }
+            if (key === aKey.down) { comp.props.position = Math.max(0, (comp.props.position || 0) - 5); updated = true; }
+          } else if (n.type === 'GYROSCOPE') {
+            const pKey = [{up:'w',down:'s'},{up:'e',down:'d'},{up:'r',down:'f'},{up:'t',down:'g'},{up:'y',down:'h'}][aIdx++] || {};
+            if (key === pKey.up) { comp.props.pitch = Math.min(45, (comp.props.pitch || 0) + 5); updated = true; }
+            if (key === pKey.down) { comp.props.pitch = Math.max(-45, (comp.props.pitch || 0) - 5); updated = true; }
+            
+            const rKey = [{up:'w',down:'s'},{up:'e',down:'d'},{up:'r',down:'f'},{up:'t',down:'g'},{up:'y',down:'h'}][aIdx++] || {};
+            if (key === rKey.up) { comp.props.roll = Math.min(45, (comp.props.roll || 0) + 5); updated = true; }
+            if (key === rKey.down) { comp.props.roll = Math.max(-45, (comp.props.roll || 0) - 5); updated = true; }
+          }
+        });
+        return updated ? nextComps : prev;
+      });
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const key = e.key.toLowerCase();
+      
+      setComponents(prev => {
+        const iNodes = prev.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER', 'GYROSCOPE'].includes(n.type));
+        let bIdx = 0; let aIdx = 0;
+        let updated = false;
+        let nextComps = prev.map(c => ({...c, props: {...c.props}}));
+
+        iNodes.forEach(n => {
+          const comp = nextComps.find(x => x.id === n.id);
+          if (!comp) return;
+
+          if (n.type === 'SWITCH') { bIdx++; }
+          else if (n.type === 'PUSH_BUTTON') {
+            const bKey = ['1','2','3','4','5','6','7','8','9','0'][bIdx++];
+            if (key === bKey && comp.props.isPressed) { comp.props.isPressed = false; updated = true; }
+          } else if (n.type === 'POTENTIOMETER') { aIdx++; }
+          else if (n.type === 'GYROSCOPE') { aIdx += 2; }
+        });
+        return updated ? nextComps : prev;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   // --- Render Helpers ---
   const getTerminalCoords = (comp, termIdx) => {
@@ -3394,6 +3468,7 @@ const App = () => {
                   <li><strong className="text-cyan-400">Wire Routing:</strong> Select a wire and drag the translucent midpoints to create corners. Double-click a corner to remove it.</li>
                   <li><strong className="text-cyan-400">Slice Tool:</strong> Click the scissors icon and drag a line across wires to instantly cut them.</li>
                   <li><strong className="text-cyan-400">3D Editor:</strong> Toggle visibility of parts, build parent/child hierarchies, or use the <strong className="text-pink-400">Cut Mesh</strong> tool to slice into solid models.</li>
+                  <li><strong className="text-cyan-400">Interactive Controls:</strong> Keys <kbd className="bg-cyan-900/30 px-1 rounded font-mono">1-9</kbd> operate buttons/switches. Keys <kbd className="bg-cyan-900/30 px-1 rounded font-mono">W/S</kbd>, <kbd className="bg-cyan-900/30 px-1 rounded font-mono">E/D</kbd>, etc. operate vertical sliders.</li>
                 </ul>
               </div>
               <div>

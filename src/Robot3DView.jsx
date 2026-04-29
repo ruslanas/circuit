@@ -626,9 +626,8 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned
                <div className="text-center font-bold text-red-500 animate-pulse mt-1 mb-1 leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div>
             ) : (
                <>
-                 <div className="flex items-center gap-1 justify-between"><span>Pitch:</span> <input type="range" min="-45" max="45" step="1" value={pitch} onChange={(e) => onUpdateProp(node.id, 'pitch', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(pitch)}°</span></div>
-                 <div className="flex items-center gap-1 justify-between"><span>Roll:</span> <input type="range" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(node.id, 'roll', parseFloat(e.target.value))} className="w-16 accent-purple-500" /> <span className="w-6 text-right">{Math.round(roll)}°</span></div>
-                 <button onClick={() => { onUpdateProp(node.id, 'pitch', 0); onUpdateProp(node.id, 'roll', 0); }} className="bg-purple-900/50 hover:bg-purple-700/50 py-0.5 rounded transition-colors w-full mt-1">Reset Level</button>
+                 <div className="flex items-center justify-between text-cyan-300"><span>Pitch:</span> <span className="font-mono">{Math.round(pitch)}°</span></div>
+                 <div className="flex items-center justify-between text-cyan-300"><span>Roll:</span> <span className="font-mono">{Math.round(roll)}°</span></div>
                </>
             )}
           </div>
@@ -1243,7 +1242,7 @@ export default function Robot3DView({
 
   const hasWorkBed = nodes.some(n => n.type === 'WORK_BED');
   const floorLevel = hasWorkBed ? 0.2 : 0;
-  const interactiveNodes = nodes.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER'].includes(n.type));
+  const interactiveNodes = nodes.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER', 'GYROSCOPE'].includes(n.type));
   const activeCameras = nodes.filter(n => n.type === 'CAMERA' && nodeValues[n.id]?.isActive && !burnedNodes[n.id]);
 
   const buildTree = (parentId) => {
@@ -1395,54 +1394,97 @@ export default function Robot3DView({
           <div 
             className="absolute bottom-6 left-1/2 -translate-x-1/2 max-w-[95%] overflow-x-auto hide-scrollbar bg-black/80 border border-cyan-900/50 rounded-sm p-3 flex gap-6 backdrop-blur-sm shadow-[0_0_20px_rgba(0,240,255,0.15)] z-20 pointer-events-auto"
             onPointerDown={(e) => e.stopPropagation()}
+            onPointerMove={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
           >
-            {interactiveNodes.map(n => {
-              const val = nodeValues[n.id];
-              if (n.type === 'SWITCH') {
-                return (
-                  <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[60px] shrink-0">
-                    <span className="text-[9px] text-cyan-600 font-bold uppercase tracking-wider">SW {n.id.slice(0,4)}</span>
-                    <button 
-                      onClick={() => onUpdateProp(n.id, 'isOpen', !val)}
-                      className={`px-3 py-1.5 rounded-sm text-[10px] font-bold border transition-colors w-full ${val ? 'bg-black text-cyan-700 border-cyan-900/50' : 'bg-cyan-900/50 text-cyan-300 border-cyan-500/50 hover:bg-cyan-800/50 shadow-[0_0_8px_rgba(0,240,255,0.3)]'}`}
-                    >
-                      {val ? 'OPEN' : 'CLOSED'}
-                    </button>
-                  </div>
-                );
-              }
-              if (n.type === 'PUSH_BUTTON') {
-                return (
-                  <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[60px] shrink-0">
-                    <span className="text-[9px] text-pink-600 font-bold uppercase tracking-wider">BTN {n.id.slice(0,4)}</span>
-                    <button 
-                      onPointerDown={(e) => { e.target.setPointerCapture(e.pointerId); onUpdateProp(n.id, 'isPressed', true); }}
-                      onPointerUp={(e) => { try{ e.target.releasePointerCapture(e.pointerId); }catch(err){} onUpdateProp(n.id, 'isPressed', false); }}
-                      onPointerCancel={() => onUpdateProp(n.id, 'isPressed', false)}
-                      className={`px-3 py-1.5 rounded-sm text-[10px] font-bold border transition-colors w-full ${val ? 'bg-pink-900/50 text-pink-300 border-pink-500/50 shadow-[0_0_8px_rgba(255,0,60,0.4)]' : 'bg-black text-pink-700 border-pink-900/50 hover:bg-pink-900/30'}`}
-                    >
-                      PUSH
-                    </button>
-                  </div>
-                );
-              }
-              if (n.type === 'POTENTIOMETER') {
-                return (
-                  <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[120px] shrink-0">
-                    <span className="text-[9px] text-yellow-600 font-bold uppercase tracking-wider">POT {n.id.slice(0,4)}</span>
-                    <div className="flex items-center gap-2 w-full">
-                      <input 
-                        type="range" min="0" max="100" step="1" value={val !== undefined ? val : 50} 
-                        onChange={(e) => onUpdateProp(n.id, 'position', parseFloat(e.target.value))}
-                        className="w-full accent-yellow-500"
-                      />
-                      <span className="text-[9px] text-yellow-500 w-6 text-right font-mono">{Math.round(val !== undefined ? val : 50)}%</span>
+            {(() => {
+              let bRenderIdx = 0;
+              let aRenderIdx = 0;
+              const btnKeys = ['1','2','3','4','5','6','7','8','9','0'];
+              const axisKeys = [{up: 'W', down: 'S'}, {up: 'E', down: 'D'}, {up: 'R', down: 'F'}, {up: 'T', down: 'G'}, {up: 'Y', down: 'H'}];
+              
+              return interactiveNodes.map(n => {
+                const val = nodeValues[n.id];
+                if (n.type === 'SWITCH') {
+                  const bKey = btnKeys[bRenderIdx++];
+                  return (
+                    <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[50px] shrink-0">
+                      <span className="text-[9px] text-cyan-600 font-bold uppercase tracking-wider">SW {n.id.slice(0,4)}</span>
+                      <button 
+                        onClick={() => onUpdateProp(n.id, 'isOpen', !val)}
+                        className={`px-3 py-1.5 rounded-sm text-[10px] font-bold border transition-colors w-full ${val ? 'bg-black text-cyan-700 border-cyan-900/50' : 'bg-cyan-900/50 text-cyan-300 border-cyan-500/50 shadow-[0_0_8px_rgba(0,240,255,0.3)]'}`}
+                      >
+                        {val ? 'OPEN' : 'CLOSED'}
+                      </button>
+                      <kbd className="text-[8px] text-cyan-500 bg-cyan-900/30 px-1.5 rounded font-mono border border-cyan-800/50">[{bKey}]</kbd>
                     </div>
-                  </div>
-                );
-              }
-              return null;
-            })}
+                  );
+                }
+                if (n.type === 'PUSH_BUTTON') {
+                  const bKey = btnKeys[bRenderIdx++];
+                  return (
+                    <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[50px] shrink-0">
+                      <span className="text-[9px] text-pink-600 font-bold uppercase tracking-wider">BTN {n.id.slice(0,4)}</span>
+                      <button 
+                        onPointerDown={(e) => { e.target.setPointerCapture(e.pointerId); onUpdateProp(n.id, 'isPressed', true); }}
+                        onPointerUp={(e) => { try{ e.target.releasePointerCapture(e.pointerId); }catch(err){} onUpdateProp(n.id, 'isPressed', false); }}
+                        onPointerCancel={() => onUpdateProp(n.id, 'isPressed', false)}
+                        className={`px-3 py-1.5 rounded-sm text-[10px] font-bold border transition-colors w-full ${val ? 'bg-pink-900/50 text-pink-300 border-pink-500/50 shadow-[0_0_8px_rgba(255,0,60,0.4)]' : 'bg-black text-pink-700 border-pink-900/50 hover:bg-pink-900/30'}`}
+                      >
+                        PUSH
+                      </button>
+                      <kbd className="text-[8px] text-pink-500 bg-pink-900/30 px-1.5 rounded font-mono border border-pink-800/50">[{bKey}]</kbd>
+                    </div>
+                  );
+                }
+                if (n.type === 'POTENTIOMETER') {
+                  const aKey = axisKeys[aRenderIdx++] || {up:'?', down:'?'};
+                  const pos = val !== undefined ? val : 50;
+                  return (
+                    <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[40px] shrink-0">
+                      <span className="text-[9px] text-yellow-600 font-bold uppercase tracking-wider">POT {n.id.slice(0,4)}</span>
+                      <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50">{aKey.up}</kbd>
+                      <input 
+                        type="range" orient="vertical" min="0" max="100" step="1" value={pos} 
+                        onChange={(e) => onUpdateProp(n.id, 'position', parseFloat(e.target.value))}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="accent-yellow-500 cursor-pointer"
+                        style={{ WebkitAppearance: 'slider-vertical', appearance: 'slider-vertical', width: '12px', height: '60px' }}
+                      />
+                      <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50">{aKey.down}</kbd>
+                      <span className="text-[9px] text-yellow-500 font-mono">{Math.round(pos)}%</span>
+                    </div>
+                  );
+                }
+                if (n.type === 'GYROSCOPE') {
+                  const pKey = axisKeys[aRenderIdx++] || {up:'?', down:'?'};
+                  const rKey = axisKeys[aRenderIdx++] || {up:'?', down:'?'};
+                  const pitch = val?.pitch || 0;
+                  const roll = val?.roll || 0;
+                  return (
+                    <div key={n.id} className="flex gap-4 items-center justify-center border-l border-r border-purple-900/30 px-4 shrink-0">
+                      <div className="flex flex-col items-center gap-2">
+                         <span className="text-[9px] text-purple-500 font-bold uppercase tracking-wider">PITCH</span>
+                         <kbd className="text-[8px] text-purple-400 bg-purple-900/30 px-1 rounded font-mono border border-purple-800/50">{pKey.up}</kbd>
+                         <input type="range" orient="vertical" min="-45" max="45" step="1" value={pitch} onChange={(e) => onUpdateProp(n.id, 'pitch', parseFloat(e.target.value))} onPointerDown={(e) => e.stopPropagation()} className="accent-purple-500 cursor-pointer" style={{ WebkitAppearance: 'slider-vertical', appearance: 'slider-vertical', width: '12px', height: '60px' }} />
+                         <kbd className="text-[8px] text-purple-400 bg-purple-900/30 px-1 rounded font-mono border border-purple-800/50">{pKey.down}</kbd>
+                         <span className="text-[9px] text-purple-400 font-mono">{Math.round(pitch)}°</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                         <span className="text-[9px] text-purple-500 font-bold uppercase tracking-wider">ROLL</span>
+                         <kbd className="text-[8px] text-purple-400 bg-purple-900/30 px-1 rounded font-mono border border-purple-800/50">{rKey.up}</kbd>
+                         <input type="range" orient="vertical" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(n.id, 'roll', parseFloat(e.target.value))} onPointerDown={(e) => e.stopPropagation()} className="accent-purple-500 cursor-pointer" style={{ WebkitAppearance: 'slider-vertical', appearance: 'slider-vertical', width: '12px', height: '60px' }} />
+                         <kbd className="text-[8px] text-purple-400 bg-purple-900/30 px-1 rounded font-mono border border-purple-800/50">{rKey.down}</kbd>
+                         <span className="text-[9px] text-purple-400 font-mono">{Math.round(roll)}°</span>
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              });
+            })()}
           </div>
         )}
         

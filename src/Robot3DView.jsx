@@ -89,12 +89,12 @@ const MeshCutter = ({ isCutting, cutMode, targetRef, nodesLength }) => {
 };
 
 const CameraFeedsManager = ({ activeCameras, cameraRefs, cameraContainerRefs }) => {
-  const { gl, scene, camera } = useThree();
+  const { gl, scene, camera, size } = useThree();
 
   useFrame(() => {
     // 1. Render main scene
     gl.setScissorTest(false);
-    gl.setViewport(0, 0, gl.domElement.width, gl.domElement.height);
+    gl.setViewport(0, 0, size.width, size.height);
     gl.clear();
     gl.render(scene, camera);
 
@@ -105,12 +105,12 @@ const CameraFeedsManager = ({ activeCameras, cameraRefs, cameraContainerRefs }) 
       if (camRef?.current && container) {
         const rect = container.getBoundingClientRect();
         const canvasRect = gl.domElement.getBoundingClientRect();
-        const dpr = gl.getPixelRatio();
         
-        const x = (rect.left - canvasRect.left) * dpr;
-        const y = (canvasRect.bottom - rect.bottom) * dpr; 
-        const width = rect.width * dpr;
-        const height = rect.height * dpr;
+        // WebGLRenderer automatically multiplies by pixelRatio internally
+        const x = rect.left - canvasRect.left;
+        const y = canvasRect.bottom - rect.bottom; 
+        const width = rect.width;
+        const height = rect.height;
 
         if (width > 0 && height > 0) {
           gl.setViewport(x, y, width, height);
@@ -125,7 +125,7 @@ const CameraFeedsManager = ({ activeCameras, cameraRefs, cameraContainerRefs }) 
 
     // Restore viewport/scissor for the next frame
     gl.setScissorTest(false);
-    gl.setViewport(0, 0, gl.domElement.width, gl.domElement.height);
+    gl.setViewport(0, 0, size.width, size.height);
   }, 1);
 
   return null;

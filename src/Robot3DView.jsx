@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges } from '@react-three/drei';
+import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges, PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -86,6 +86,49 @@ const MeshCutter = ({ isCutting, cutMode, targetRef, nodesLength }) => {
       </group>
     </TransformControls>
   );
+};
+
+const CameraFeedsManager = ({ activeCameras, cameraRefs, cameraContainerRefs }) => {
+  const { gl, scene, camera } = useThree();
+
+  useFrame(() => {
+    // 1. Render main scene
+    gl.setScissorTest(false);
+    gl.setViewport(0, 0, gl.domElement.width, gl.domElement.height);
+    gl.clear();
+    gl.render(scene, camera);
+
+    // 2. Render each active camera feed
+    activeCameras.forEach(n => {
+      const camRef = cameraRefs[n.id];
+      const container = cameraContainerRefs.current[n.id];
+      if (camRef?.current && container) {
+        const rect = container.getBoundingClientRect();
+        const canvasRect = gl.domElement.getBoundingClientRect();
+        const dpr = gl.getPixelRatio();
+        
+        const x = (rect.left - canvasRect.left) * dpr;
+        const y = (canvasRect.bottom - rect.bottom) * dpr; 
+        const width = rect.width * dpr;
+        const height = rect.height * dpr;
+
+        if (width > 0 && height > 0) {
+          gl.setViewport(x, y, width, height);
+          gl.setScissor(x, y, width, height);
+          gl.setScissorTest(true);
+          camRef.current.aspect = width / height;
+          camRef.current.updateProjectionMatrix();
+          gl.render(scene, camRef.current);
+        }
+      }
+    });
+
+    // Restore viewport/scissor for the next frame
+    gl.setScissorTest(false);
+    gl.setViewport(0, 0, gl.domElement.width, gl.domElement.height);
+  }, 1);
+
+  return null;
 };
 
 const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
@@ -905,6 +948,48 @@ const BatteryNode = ({ node, config, voltage = 9, isSelected, isBurned, isEditMo
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEditMode, isVisible = true, onSelect, onUpdateOffset, children, registerCamera }) => {
+  const groupRef = useRef(null);
+  const cameraRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+
+  React.useEffect(() => {
+    if (cameraRef.current) {
+      registerCamera(node.id, cameraRef);
+    }
+    return () => registerCamera(node.id, null);
+  }, [node.id, registerCamera]);
+
+  const content = (
+    <>
+      <group visible={isVisible} position={[0, 0.2, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <DreiBox args={[0.6, 0.4, 0.6]}>
+          <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} />
+          <Edges color="black" />
+        </DreiBox>
+        <Cylinder args={[0.15, 0.15, 0.3, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#111" /></Cylinder>
+        <Cylinder args={[0.1, 0.1, 0.32, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={isActive ? 0.5 : 0} /></Cylinder>
+        <PerspectiveCamera ref={cameraRef} position={[0, 0, 0.6]} rotation={[0, Math.PI, 0]} fov={60} near={0.1} far={100} />
+      </group>
+      {isSelected && isVisible && (
+        <Html position={[0, 0.8, 0]} center>
+          <div className="bg-black/90 text-yellow-400 px-2 py-1 rounded border border-yellow-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+            CAMERA<br/>{isBurned ? <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div> : (isActive ? 'RECORDING' : 'STANDBY')}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0.5, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 const PhysicsRoot = ({ children, isStatic, isSimulating, isEditMode, floorLevel, rootNodeId, nodes, nodeConfig, nodeValues, showTrack }) => {
   const groupRef = useRef(null);
   const velocity = useRef(new THREE.Vector3());
@@ -1071,6 +1156,21 @@ export default function Robot3DView({
   const [cutMode, setCutMode] = useState('translate'); // 'translate' | 'rotate'
   const sceneGroupRef = useRef(null);
 
+  const [cameraRefs, setCameraRefs] = useState({});
+  const registerCamera = React.useCallback((id, ref) => {
+    setCameraRefs(prev => {
+      if (ref === null) {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      }
+      return { ...prev, [id]: ref };
+    });
+  }, []);
+
+  const cameraContainerRefs = useRef({});
+  const setCameraContainerRef = (id, el) => { cameraContainerRefs.current[id] = el; };
+
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -1144,6 +1244,7 @@ export default function Robot3DView({
   const hasWorkBed = nodes.some(n => n.type === 'WORK_BED');
   const floorLevel = hasWorkBed ? 0.2 : 0;
   const interactiveNodes = nodes.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER'].includes(n.type));
+  const activeCameras = nodes.filter(n => n.type === 'CAMERA' && nodeValues[n.id]?.isActive && !burnedNodes[n.id]);
 
   const buildTree = (parentId) => {
     return nodes
@@ -1172,6 +1273,7 @@ export default function Robot3DView({
         else if (n.type === 'LED') content = <LedNode node={n} config={cfg} isLit={val?.isLit} color={val?.color} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</LedNode>;
         else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
         else if (n.type === 'BATTERY') content = <BatteryNode node={n} config={cfg} voltage={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</BatteryNode>;
+        else if (n.type === 'CAMERA') content = <CameraNode node={n} config={cfg} isActive={val?.isActive} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} registerCamera={registerCamera}>{buildTree(n.id)}</CameraNode>;
 
         const nodeElement = content ? <group key={n.id} scale={scale}>{content}</group> : null;
         
@@ -1283,6 +1385,9 @@ export default function Robot3DView({
           <Grid infiniteGrid fadeDistance={40} sectionColor="#00f0ff" cellColor="#003a40" sectionThickness={1} cellThickness={0.5} />
           {showTrack && <TrackEnvironment />}
           <group ref={sceneGroupRef} position={[0, 0.6, 0]}>{buildTree(null)}</group>
+          {activeCameras.length > 0 && (
+             <CameraFeedsManager activeCameras={activeCameras} cameraRefs={cameraRefs} cameraContainerRefs={cameraContainerRefs} />
+          )}
         </Canvas>
 
         {/* Live Controls Dashboard */}
@@ -1338,6 +1443,25 @@ export default function Robot3DView({
               }
               return null;
             })}
+          </div>
+        )}
+        
+        {/* Camera Feeds Overlay */}
+        {activeCameras.length > 0 && (
+          <div className="absolute top-4 right-4 flex flex-col gap-4 pointer-events-none z-10">
+            {activeCameras.map(n => (
+              <div key={`cam-${n.id}`} className="flex flex-col items-end gap-1 shrink-0">
+                <div 
+                  ref={el => setCameraContainerRef(n.id, el)}
+                  className="bg-transparent border border-yellow-500/80 rounded-sm relative overflow-hidden shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+                  style={{ width: '160px', height: '120px' }}
+                >
+                  <div className="absolute inset-0 pointer-events-none shadow-[inset_0_0_15px_rgba(0,0,0,0.9)] z-10" />
+                  <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_4px_#ff0000] z-10" />
+                  <span className="absolute bottom-1 right-2 text-[9px] text-yellow-500 font-bold uppercase tracking-wider drop-shadow-[0_1px_1px_rgba(0,0,0,1)] z-10">CAM {n.id.slice(0,4)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

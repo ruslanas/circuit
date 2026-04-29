@@ -37,7 +37,7 @@ import {
   PushButtonSymbol, NpnSymbol, PnpSymbol, HBridgeSymbol, MotorSymbol,
   ServoSymbol, PotentiometerSymbol, CustomComponentIcon, PropellerSymbol,
   GyroscopeSymbol, GroundSymbol, SolderingIronSymbol, BedSymbol, WheelSymbol,
-  CarChassisSymbol, BuckConverterSymbol, AeroShellSymbol, XChassisSymbol
+  CarChassisSymbol, BuckConverterSymbol, AeroShellSymbol, XChassisSymbol, CameraSymbol
 } from './symbols.jsx';
 
 // --- Constants & Types ---
@@ -302,6 +302,12 @@ Example: (I0 AND NOT I1) OR I1`,
     terminals: [{ x: 0, y: 30, type: 'pos' }, { x: 80, y: 30, type: 'neg' }],
     defaultProps: { resistance: 50, maxCurrent: 5, maxPower: 50 }
   },
+  CAMERA: {
+    id: 'CAMERA', name: 'Digital Camera', desc: 'Captures video feed. Requires power.',
+    icon: CameraSymbol, color: '#facc15',
+    terminals: [{ x: 0, y: 30, type: 'vcc' }, { x: 80, y: 30, type: 'gnd' }],
+    defaultProps: { maxVoltage: 24, maxCurrent: 0.5 }
+  },
   WORK_BED: {
     id: 'WORK_BED', name: 'Work Bed', desc: 'Structural platform. No electrical pins.',
     icon: BedSymbol, color: '#a8a29e',
@@ -338,7 +344,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL']
 };
 
 // Map compound devices to base physical components
@@ -422,6 +428,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'TRANSFORMER') return `${formatUnit(comp.props.primaryL, 'H')}:${formatUnit(comp.props.secondaryL, 'H')}`;
   if (comp.type === 'LED') return `${comp.props.forwardVoltage}V ${comp.props.color}`;
   if (comp.type === 'DIODE') return `${comp.props.forwardVoltage}V`;
+  if (comp.type === 'CAMERA') return 'CAM';
   if (comp.type === 'POTENTIOMETER') return `${formatUnit(comp.props.resistance, 'Ω')} (${comp.props.position}%)`;
   if (comp.type === 'NPN' || comp.type === 'PNP') return `β=${comp.props.beta || 100}`;
   if (comp.type === 'GROUND') return '0V';
@@ -1725,6 +1732,9 @@ const App = () => {
         else if (c.type === 'BUCK_CONVERTER') {
             spice += `* Buck Converter component ${name} omitted (behavioral block)\n`;
         }
+        else if (c.type === 'CAMERA') {
+            spice += `* Camera component ${name} omitted (macro block required)\n`;
+        }
     });
 
     spice += `\n.model DLED D(Is=1e-14 n=1.8 Rs=2)\n`;
@@ -1968,7 +1978,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2005,6 +2015,8 @@ const App = () => {
         nodeValues[comp.id] = { isLit: isSimulating && simData.active[comp.id], color: comp.props.color };
       } else if (comp.type === 'BATTERY') {
         nodeValues[comp.id] = comp.props.voltage !== undefined ? comp.props.voltage : 9;
+      } else if (comp.type === 'CAMERA') {
+        nodeValues[comp.id] = { isActive: isSimulating && simData.active[comp.id] };
       }
     });
   }
@@ -2763,7 +2775,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}

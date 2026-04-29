@@ -253,6 +253,10 @@ export function simulateTick({
 
       if (vc.type === 'BATTERY') {
         vSources.push({ nPos: n0, nNeg: n1, V: vc.props.voltage || 0, Rs: 0.01, id: vc.id });
+      } else if (vc.type === 'CAMERA') {
+        const nVcc = tNodes[vc.virtualTerminals[0]];
+        const nGnd = tNodes[vc.virtualTerminals[1]];
+        if(nVcc !== undefined && nGnd !== undefined) resistors.push({ n1: nVcc, n2: nGnd, R: 1000, id: vc.id });
       } else if (vc.type === 'AC_SOURCE') {
         const t = tick * dt;
         const freq = vc.props.frequency !== undefined ? vc.props.frequency : 1;
@@ -1008,8 +1012,12 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
-      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE'].includes(type)) {
+      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE', 'CAMERA'].includes(type)) {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
+        if (type === 'CAMERA') {
+            const vIn = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
+            if (Math.abs(vIn) > maxV) { isBurned = true; burnReason = "MAX VOLTAGE EXCEEDED"; }
+        }
       }
       else if (type === 'CAPACITOR') {
         const v = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);

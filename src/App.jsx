@@ -24,7 +24,9 @@ import {
   Redo,
   Box,
   ArrowRightLeft,
-  Scissors
+  Scissors,
+  Link,
+  Unlink
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
 import Robot3DView from './Robot3DView.jsx';
@@ -622,6 +624,19 @@ const App = () => {
     setSelectedWireId(null);
   };
 
+  const groupSelected = () => {
+    if (selectedIds.length < 2) return;
+    const newGroupId = crypto.randomUUID();
+    pushStateToHistory(components, wires);
+    setComponents(prev => prev.map(c => selectedIds.includes(c.id) ? { ...c, groupId: newGroupId } : c));
+  };
+
+  const ungroupSelected = () => {
+    if (selectedIds.length === 0) return;
+    pushStateToHistory(components, wires);
+    setComponents(prev => prev.map(c => selectedIds.includes(c.id) ? { ...c, groupId: undefined } : c));
+  };
+
   // --- PWA Setup ---
   useEffect(() => {
     const manifest = {
@@ -779,9 +794,11 @@ const App = () => {
 
     if (isCustom) {
       const newIdPrefix = crypto.randomUUID().substring(0, 8);
+      const newGroupId = crypto.randomUUID();
       const customComps = type.components.map(c => ({
         ...c,
         id: `${newIdPrefix}-${c.id}`,
+        groupId: newGroupId,
         x: snapToGrid(150 / zoom - pan.x) + c.x,
         y: snapToGrid(150 / zoom - pan.y) + c.y,
       }));
@@ -853,9 +870,11 @@ const App = () => {
 
       if (isCustom) {
         const newIdPrefix = crypto.randomUUID().substring(0, 8);
+        const newGroupId = crypto.randomUUID();
         const customComps = type.components.map(c => ({
           ...c,
           id: `${newIdPrefix}-${c.id}`,
+          groupId: newGroupId,
           x: snapToGrid(dropX - 40) + c.x,
           y: snapToGrid(dropY - 30) + c.y,
         }));
@@ -964,31 +983,39 @@ const App = () => {
     if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
     activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     
+    const comp = components.find(c => c.id === id);
+    if (!comp) return;
+
+    let newSelection = [...selectedIds];
+    const groupIdsToSelect = comp.groupId ? components.filter(c => c.groupId === comp.groupId).map(c => c.id) : [id];
+
     if (e.shiftKey) {
-      setSelectedIds(prev => {
-        const set = new Set(prev);
-        if (set.has(id)) set.delete(id);
-        else set.add(id);
-        return Array.from(set);
-      });
+      const allSelected = groupIdsToSelect.every(gid => selectedIds.includes(gid));
+      if (allSelected) {
+        newSelection = newSelection.filter(sid => !groupIdsToSelect.includes(sid));
+      } else {
+        newSelection = [...new Set([...newSelection, ...groupIdsToSelect])];
+      }
+      setSelectedIds(newSelection);
     } else {
       if (!selectedIds.includes(id)) {
-        setSelectedIds([id]);
+        newSelection = groupIdsToSelect;
+        setSelectedIds(newSelection);
       }
     }
     setSelectedWireId(null);
     setIsLibraryOpen(false);
     
-    const comp = components.find(c => c.id === id);
-    if (!comp) return;
-
     dragSnapshotRef.current = { components, wires };
     setDraggedComp({
       id,
       startX: e.clientX,
       startY: e.clientY,
-      initialX: comp.x,
-      initialY: comp.y
+      initialPositions: newSelection.reduce((acc, sid) => {
+        const c = components.find(c => c.id === sid);
+        if (c) acc[sid] = { x: c.x, y: c.y };
+        return acc;
+      }, {})
     });
   };
 
@@ -1097,7 +1124,7 @@ const App = () => {
       const dx = (e.clientX - draggedComp.startX) / zoom;
       const dy = (e.clientY - draggedComp.startY) / zoom;
       setComponents(prev => prev.map(c => 
-        c.id === draggedComp.id ? { ...c, x: snapToGrid(draggedComp.initialX + dx), y: snapToGrid(draggedComp.initialY + dy) } : c
+        draggedComp.initialPositions[c.id] ? { ...c, x: snapToGrid(draggedComp.initialPositions[c.id].x + dx), y: snapToGrid(draggedComp.initialPositions[c.id].y + dy) } : c
       ));
     }
   };
@@ -1183,7 +1210,8 @@ const App = () => {
          const now = Date.now();
          const isDoubleClick = (lastClickRef.current.id === draggedComp.id && now - lastClickRef.current.time < 300);
 
-         if (isDoubleClick && selectedIds.length === 1) {
+         if (isDoubleClick) {
+             setSelectedIds([draggedComp.id]);
              setIsPropDialogOpen(true);
          } else {
              const comp = components.find(c => c.id === draggedComp.id);
@@ -1789,6 +1817,12 @@ const App = () => {
          redo();
          return;
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+         e.preventDefault();
+         if (e.shiftKey) ungroupSelected();
+         else groupSelected();
+         return;
+      }
       if (e.key === 'Delete' || e.key === 'Backspace') {
         deleteSelected();
       } else if (e.key.toLowerCase() === 'r') {
@@ -2203,6 +2237,22 @@ const App = () => {
               title="Flip Component Horizontally (F)"
             >
               <ArrowRightLeft size={14} />
+            </button>
+            <button 
+              onClick={groupSelected}
+              disabled={selectedIds.length < 2}
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Group Selected (Ctrl+G)"
+            >
+              <Link size={14} />
+            </button>
+            <button 
+              onClick={ungroupSelected}
+              disabled={selectedIds.length === 0 || !components.some(c => selectedIds.includes(c.id) && c.groupId)}
+              className="p-2 md:p-1.5 cyber-button rounded-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Ungroup Selected (Ctrl+Shift+G)"
+            >
+              <Unlink size={14} />
             </button>
             <button 
               onClick={handleSaveToLibrary}
@@ -3339,6 +3389,7 @@ const App = () => {
                   <li><strong className="text-cyan-400">Zoom:</strong> Scroll wheel or use toolbar slider.</li>
                   <li><strong className="text-cyan-400">Select:</strong> Click a component or wire.</li>
                   <li><strong className="text-cyan-400">Multi-Select:</strong> Hold <kbd className="bg-cyan-900/30 px-1 rounded font-mono">Shift</kbd> and click components.</li>
+                  <li><strong className="text-cyan-400">Group:</strong> <kbd className="bg-cyan-900/30 px-1 rounded font-mono">Ctrl+G</kbd> to group, <kbd className="bg-cyan-900/30 px-1 rounded font-mono">Ctrl+Shift+G</kbd> to ungroup.</li>
                   <li><strong className="text-cyan-400">Properties:</strong> Double-click a component/wire or use the Sliders button.</li>
                   <li><strong className="text-cyan-400">Wire Routing:</strong> Select a wire and drag the translucent midpoints to create corners. Double-click a corner to remove it.</li>
                   <li><strong className="text-cyan-400">Slice Tool:</strong> Click the scissors icon and drag a line across wires to instantly cut them.</li>
@@ -3358,6 +3409,8 @@ const App = () => {
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Del / Backspace</kbd> - Delete selected</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Z</kbd> - Undo</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Y</kbd> - Redo</div>
+                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+G</kbd> - Group selected</div>
+                  <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Ctrl+Shift+G</kbd> - Ungroup selected</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">S</kbd> - Toggle Simulation</div>
                   <div><kbd className="bg-cyan-900/30 px-1 rounded font-mono text-[10px]">Esc</kbd> - Deselect / Cancel Tools / Close</div>
                 </div>

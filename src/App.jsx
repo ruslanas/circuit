@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { simulateTick } from './engine.js';
 import Robot3DView from './Robot3DView.jsx';
+import { saveModel, deleteModel } from './db.js';
 import { EXAMPLES } from './examples.js';
 import {
   AcSymbol, OscillatorSymbol, OpAmpSymbol, ComparatorSymbol, PlcSymbol,
@@ -344,7 +345,7 @@ Example: (I0 AND NOT I1) OR I1`,
     id: 'MODEL_3D', name: '3D Model', desc: 'Custom imported 3D model (.gltf or .glb). Paste URL or upload file in properties.',
     icon: Box, color: '#00f0ff',
     terminals: [],
-    defaultProps: { modelUrl: '', color: '#ffffff', wireframe: false, opacity: 1 }
+    defaultProps: { color: '#ffffff', wireframe: false, opacity: 1 }
   }
 };
 
@@ -858,6 +859,19 @@ const App = () => {
     setLoadedExampleTitle("");
   };
 
+  const handleModelUpload = async (e, compId) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+        await saveModel(compId, file);
+        const modelUrl = `idb://${compId}`;
+        setComponents(prev => prev.map(c => c.id === compId ? { ...c, props: { ...c.props, modelUrl } } : c));
+    } catch (err) {
+        console.error("Failed to save model to IndexedDB", err);
+        alert("Failed to save 3D model.");
+    }
+  };
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e) => {
     e.preventDefault();
@@ -1243,6 +1257,12 @@ const App = () => {
   const deleteSelected = () => {
     if (selectedIds.length > 0) {
       pushStateToHistory(components, wires);
+      selectedIds.forEach(id => {
+          const comp = components.find(c => c.id === id);
+          if (comp && comp.props.modelUrl && comp.props.modelUrl.startsWith('idb://')) {
+              deleteModel(id);
+          }
+      });
       setComponents(prev => prev.filter(c => !selectedIds.includes(c.id)));
       setWires(prev => prev.filter(w => !selectedIds.includes(w.from.compId) && !selectedIds.includes(w.to.compId)));
       setSelectedIds([]);
@@ -2909,7 +2929,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA', 'MODEL_3D'].includes(c.type))}
+              nodes={components.filter(c => c.type !== 'GROUND')}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3025,34 +3045,7 @@ const App = () => {
                               }}
                               className="w-full accent-cyan-500"
                             />
-                            <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{key === 'opacity' ? Number(val).toFixed(1) : Number(val).toFixed(1) + '%'}</span>
-                          </div>
-                        ) : key === 'modelUrl' ? (
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="text" value={val}
-                              onChange={(e) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: e.target.value } } : c))}
-                              className="w-full cyber-input rounded-sm p-1.5 text-[10px]"
-                              placeholder="URL or Upload ->"
-                            />
-                            <button
-                              onClick={() => document.getElementById(`upload-model-${comp.id}`).click()}
-                              className="px-2 py-1.5 cyber-button rounded-sm shrink-0"
-                              title="Upload .glb/.gltf"
-                            >
-                              📁
-                            </button>
-                            <input
-                              id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf" className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (evt) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: evt.target.result } } : c));
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
+                            <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{key === 'opacity' ? Number(val).toFixed(1) : `${Number(val).toFixed(1)}%`}</span>
                           </div>
                         ) : (
                           <input 
@@ -3093,6 +3086,45 @@ const App = () => {
                     ))}
                   </div>
 
+                  {/* --- 3D Model Attachment Section --- */}
+                  <div className="mt-4 pt-3 border-t border-cyan-900/50">
+                      <h4 className="block text-[9px] font-semibold text-cyan-600 mb-1 uppercase tracking-wider cyber-text">3D Model Attachment</h4>
+                      <div className="flex items-center gap-2">
+                          <input 
+                              type="text" 
+                              value={comp.props.modelUrl || ''}
+                              onChange={(e) => {
+                                  const newUrl = e.target.value;
+                                  if (!newUrl && comp.props.modelUrl && comp.props.modelUrl.startsWith('idb://')) {
+                                      deleteModel(comp.id);
+                                  }
+                                  setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, modelUrl: newUrl } } : c))
+                              }}
+                              className="w-full cyber-input rounded-sm p-1.5 text-[10px]"
+                              placeholder="URL or Upload ->"
+                          />
+                          <button
+                              onClick={() => document.getElementById(`upload-model-${comp.id}`).click()}
+                              className="px-2 py-1.5 cyber-button rounded-sm shrink-0"
+                              title="Upload .glb/.gltf"
+                          >
+                              📁
+                          </button>
+                          {comp.props.modelUrl && comp.props.modelUrl.startsWith('idb://') && (
+                              <button
+                                  onClick={() => {
+                                      deleteModel(comp.id);
+                                      setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, modelUrl: '' } } : c));
+                                  }}
+                                  className="px-2 py-1.5 cyber-button cyber-button-danger rounded-sm shrink-0"
+                                  title="Remove Uploaded Model"
+                              >
+                                  🗑️
+                              </button>
+                          )}
+                          <input id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => handleModelUpload(e, comp.id)} />
+                      </div>
+                  </div>
                   {/* Physics Readout */}
                   {isSimulating && (
                     <div className="p-2 bg-black/40 border border-cyan-900/50 rounded-sm mb-3 flex flex-col shrink-0">

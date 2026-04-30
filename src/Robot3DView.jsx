@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges, PerspectiveCamera, useGLTF } from '@react-three/drei';
+import { getModel } from './db.js';
 import * as THREE from 'three';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -989,30 +990,57 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
-const ModelLoader = ({ url, color, wireframe, opacity }) => {
-  const { scene } = useGLTF(url);
+const ModelContent = ({ url, color, wireframe, opacity }) => {
+  const { scene } = useGLTF(url, true);
   const clonedScene = React.useMemo(() => {
     if (!scene) return null;
     const clone = scene.clone();
     clone.traverse((child) => {
       if (child.isMesh && child.material) {
         child.material = child.material.clone();
-        if (color && color !== '#ffffff') {
-          child.material.color.set(color);
-        }
-        if (wireframe !== undefined) {
-          child.material.wireframe = wireframe;
-        }
-        if (opacity !== undefined && opacity < 1) {
-          child.material.transparent = true;
-          child.material.opacity = opacity;
-        }
+        if (color && color !== '#ffffff') child.material.color.set(color);
+        if (wireframe !== undefined) child.material.wireframe = wireframe;
+        if (opacity !== undefined && opacity < 1) { child.material.transparent = true; child.material.opacity = opacity; }
       }
     });
     return clone;
   }, [scene, color, wireframe, opacity]);
+
   if (!clonedScene) return null;
   return <primitive object={clonedScene} />;
+}
+
+const ModelLoader = ({ url, color, wireframe, opacity }) => {
+  const [localUrl, setLocalUrl] = useState(null);
+
+  React.useEffect(() => {
+    let objectUrl;
+    const loadModel = async () => {
+      if (url && url.startsWith('idb://')) {
+        const id = url.substring(6);
+        const blob = await getModel(id);
+        if (blob) {
+          objectUrl = URL.createObjectURL(blob);
+          setLocalUrl(objectUrl);
+        } else {
+          setLocalUrl(null); // Model not found
+        }
+      } else {
+        setLocalUrl(url);
+      }
+    };
+    loadModel();
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [url]);
+
+  if (!localUrl) return null;
+
+  return <ModelContent url={localUrl} color={color} wireframe={wireframe} opacity={opacity} />;
 };
 
 const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
@@ -1313,7 +1341,10 @@ export default function Robot3DView({
         const isVisible = cfg.visible !== false;
         
         let content = null;
-        if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
+        if (n.props?.modelUrl) {
+            content = <Model3DNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Model3DNode>;
+        }
+        else if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
         else if (n.type === 'POTENTIOMETER') content = <PotentiometerNode node={n} config={cfg} position={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</PotentiometerNode>;
         else if (n.type === 'PUSH_BUTTON') content = <ButtonNode node={n} config={cfg} isPressed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</ButtonNode>;
         else if (n.type === 'SWITCH') content = <SwitchNode node={n} config={cfg} isOpen={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</SwitchNode>;

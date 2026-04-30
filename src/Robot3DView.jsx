@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges, PerspectiveCamera, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 
@@ -989,6 +989,44 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const ModelLoader = ({ url }) => {
+  const { scene } = useGLTF(url);
+  const clonedScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
+  if (!clonedScene) return null;
+  return <primitive object={clonedScene} />;
+};
+
+const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const modelUrl = node.props?.modelUrl;
+
+  const content = (
+    <>
+      <group visible={isVisible} position={[0, 0, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+          {modelUrl ? <ModelLoader url={modelUrl} /> : <DreiBox args={[1,1,1]}><meshStandardMaterial color="#0088aa" /><Edges color="black" /></DreiBox>}
+        </React.Suspense>
+      </group>
+      {isSelected && isVisible && (
+        <Html position={[0, 1.5, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            3D MODEL
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 const PhysicsRoot = ({ children, isStatic, isSimulating, isEditMode, floorLevel, rootNodeId, nodes, nodeConfig, nodeValues, showTrack }) => {
   const groupRef = useRef(null);
   const velocity = useRef(new THREE.Vector3());
@@ -1273,6 +1311,7 @@ export default function Robot3DView({
         else if (n.type === 'AERO_SHELL') content = <AeroShellNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroShellNode>;
         else if (n.type === 'BATTERY') content = <BatteryNode node={n} config={cfg} voltage={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</BatteryNode>;
         else if (n.type === 'CAMERA') content = <CameraNode node={n} config={cfg} isActive={val?.isActive} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} registerCamera={registerCamera}>{buildTree(n.id)}</CameraNode>;
+        else if (n.type === 'MODEL_3D') content = <Model3DNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Model3DNode>;
 
         const nodeElement = content ? <group key={n.id} scale={scale}>{content}</group> : null;
         

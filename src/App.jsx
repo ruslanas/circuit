@@ -339,6 +339,12 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: CarChassisSymbol, color: '#ff003c',
     terminals: [],
     defaultProps: {}
+  },
+  MODEL_3D: {
+    id: 'MODEL_3D', name: '3D Model', desc: 'Custom imported 3D model (.gltf or .glb). Paste URL or upload file in properties.',
+    icon: Box, color: '#00f0ff',
+    terminals: [],
+    defaultProps: { modelUrl: '' }
   }
 };
 
@@ -346,7 +352,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL', 'MODEL_3D']
 };
 
 // Map compound devices to base physical components
@@ -445,6 +451,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'CAR_CHASSIS') return 'CHASSIS';
   if (comp.type === 'X_CHASSIS') return 'X-FRAME';
   if (comp.type === 'AERO_SHELL') return 'SHELL';
+  if (comp.type === 'MODEL_3D') return 'MODEL';
   return '';
 };
 
@@ -1757,6 +1764,9 @@ const App = () => {
         else if (c.type === 'AERO_SHELL') {
             spice += `* Aero Shell component ${name} omitted (structural only)\n`;
         }
+        else if (c.type === 'MODEL_3D') {
+            spice += `* 3D Model component ${name} omitted (structural only)\n`;
+        }
         else if (c.type === 'BUCK_CONVERTER') {
             spice += `* Buck Converter component ${name} omitted (behavioral block)\n`;
         }
@@ -2086,7 +2096,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA', 'MODEL_3D'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO') {
         let angle = 0;
         if (isSimulating) {
@@ -2899,7 +2909,7 @@ const App = () => {
         ) : (
           <div className="flex-1 flex overflow-hidden relative">
             <Robot3DView 
-              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA'].includes(c.type))}
+              nodes={components.filter(c => ['SERVO', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA', 'MODEL_3D'].includes(c.type))}
               nodeValues={nodeValues}
               nodeConfig={servoConfig}
               setNodeConfig={setServoConfig}
@@ -3016,6 +3026,33 @@ const App = () => {
                               className="w-full accent-cyan-500"
                             />
                             <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{Number(val).toFixed(1)}%</span>
+                          </div>
+                        ) : key === 'modelUrl' ? (
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="text" value={val}
+                              onChange={(e) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: e.target.value } } : c))}
+                              className="w-full cyber-input rounded-sm p-1.5 text-[10px]"
+                              placeholder="URL or Upload ->"
+                            />
+                            <button
+                              onClick={() => document.getElementById(`upload-model-${comp.id}`).click()}
+                              className="px-2 py-1.5 cyber-button rounded-sm shrink-0"
+                              title="Upload .glb/.gltf"
+                            >
+                              📁
+                            </button>
+                            <input
+                              id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf" className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (evt) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: evt.target.result } } : c));
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
                           </div>
                         ) : (
                           <input 

@@ -989,9 +989,28 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
-const ModelLoader = ({ url }) => {
+const ModelLoader = ({ url, color, wireframe, opacity }) => {
   const { scene } = useGLTF(url);
-  const clonedScene = React.useMemo(() => scene ? scene.clone() : null, [scene]);
+  const clonedScene = React.useMemo(() => {
+    if (!scene) return null;
+    const clone = scene.clone();
+    clone.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material = child.material.clone();
+        if (color && color !== '#ffffff') {
+          child.material.color.set(color);
+        }
+        if (wireframe !== undefined) {
+          child.material.wireframe = wireframe;
+        }
+        if (opacity !== undefined && opacity < 1) {
+          child.material.transparent = true;
+          child.material.opacity = opacity;
+        }
+      }
+    });
+    return clone;
+  }, [scene, color, wireframe, opacity]);
   if (!clonedScene) return null;
   return <primitive object={clonedScene} />;
 };
@@ -999,7 +1018,7 @@ const ModelLoader = ({ url }) => {
 const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
-  const modelUrl = node.props?.modelUrl;
+  const { modelUrl, color = '#ffffff', wireframe = false, opacity = 1 } = node.props || {};
 
   const content = (
     <>
@@ -1009,7 +1028,7 @@ const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, o
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
         <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
-          {modelUrl ? <ModelLoader url={modelUrl} /> : <DreiBox args={[1,1,1]}><meshStandardMaterial color="#0088aa" /><Edges color="black" /></DreiBox>}
+          {modelUrl ? <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} /> : <DreiBox args={[1,1,1]}><meshStandardMaterial color="#0088aa" /><Edges color="black" /></DreiBox>}
         </React.Suspense>
       </group>
       {isSelected && isVisible && (

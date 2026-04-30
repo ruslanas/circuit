@@ -344,7 +344,7 @@ Example: (I0 AND NOT I1) OR I1`,
     id: 'MODEL_3D', name: '3D Model', desc: 'Custom imported 3D model (.gltf or .glb). Paste URL or upload file in properties.',
     icon: Box, color: '#00f0ff',
     terminals: [],
-    defaultProps: { modelUrl: '' }
+    defaultProps: { modelUrl: '', color: '#ffffff', wireframe: false, opacity: 1 }
   }
 };
 
@@ -2992,7 +2992,7 @@ const App = () => {
                             }}
                             className={`w-full py-1.5 rounded-sm text-[10px] font-medium transition-colors border ${val ? 'bg-cyan-900/30 text-cyan-300 border-cyan-700/50' : 'bg-black text-cyan-700 border-cyan-900/50'}`}
                           >
-                          {val ? (key === 'isPressed' ? 'TRUE (PRESSED)' : 'TRUE (OPEN)') : (key === 'isPressed' ? 'FALSE (RELEASED)' : 'FALSE (CLOSED)')}
+                          {val ? (key === 'isPressed' ? 'TRUE (PRESSED)' : key === 'wireframe' ? 'TRUE (WIREFRAME)' : 'TRUE (OPEN)') : (key === 'isPressed' ? 'FALSE (RELEASED)' : key === 'wireframe' ? 'FALSE (SOLID)' : 'FALSE (CLOSED)')}
                           </button>
                         ) : key === 'waveform' ? (
                           <select 
@@ -3008,10 +3008,10 @@ const App = () => {
                             <option value="TRIANGLE">TRIANGLE</option>
                             <option value="SAW">SAW</option>
                           </select>
-                        ) : key === 'position' ? (
+                        ) : key === 'position' || key === 'opacity' ? (
                           <div className="flex items-center gap-2">
                             <input 
-                              type="range" min="0" max="100" step="0.1" value={val}
+                              type="range" min="0" max={key === 'opacity' ? 1 : 100} step={key === 'opacity' ? 0.1 : 0.1} value={val}
                               onChange={(e) => setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: parseFloat(e.target.value) } } : c))}
                               onPointerDown={(e) => { dragSnapshotRef.current = { components, wires }; }}
                               onPointerUp={(e) => {
@@ -3025,7 +3025,7 @@ const App = () => {
                               }}
                               className="w-full accent-cyan-500"
                             />
-                            <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{Number(val).toFixed(1)}%</span>
+                            <span className="text-[9px] font-mono w-8 text-right text-cyan-400">{key === 'opacity' ? Number(val).toFixed(1) : Number(val).toFixed(1) + '%'}</span>
                           </div>
                         ) : key === 'modelUrl' ? (
                           <div className="flex items-center gap-2">
@@ -3056,7 +3056,7 @@ const App = () => {
                           </div>
                         ) : (
                           <input 
-                            type={typeof val === 'number' ? 'number' : 'text'} value={val}
+                            type={key === 'color' ? 'color' : typeof val === 'number' ? 'number' : 'text'} value={val}
                             onFocus={() => { dragSnapshotRef.current = { components, wires }; }}
                             onChange={(e) => {
                               let raw = e.target.value;
@@ -3073,6 +3073,7 @@ const App = () => {
                               if (key === 'dutyCycle') finalVal = Math.max(0, Math.min(100, val === '' ? 50 : val));
                               if (key === 'frequency' && (val === '' || val <= 0)) finalVal = 1;
                               if (key === 'coupling') finalVal = Math.max(0, Math.min(0.999, val === '' ? 0.99 : val));
+                              if (key === 'opacity') finalVal = Math.max(0, Math.min(1, val === '' ? 1 : val));
                               if (finalVal !== val) {
                                 setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: finalVal } } : c));
                               }

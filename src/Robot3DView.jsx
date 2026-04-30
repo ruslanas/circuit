@@ -537,6 +537,7 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
           <meshStandardMaterial color="#71717a" metalness={0.8} roughness={0.4} />
           <Edges color="#222" />
         </Cylinder>
+        <group position={[0, 0.05, 0]}>{children}</group>
       </group>
       {isSelected && isVisible && (
         <Html position={[0, 1.3, 0]} center>
@@ -546,7 +547,6 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
           </div>
         </Html>
       )}
-      <group position={[0, 1.0, 0]}>{children}</group>
     </>
   );
 
@@ -581,6 +581,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
          <Cylinder args={[0.08, 0.08, 0.15, 8]}><meshStandardMaterial color="#94a3b8" /></Cylinder>
          <DreiBox args={[1.8, 0.02, 0.2]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
          <DreiBox args={[0.2, 0.02, 1.8]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+         <group position={[0, 0.15, 0]}>{children}</group>
       </group>
       {isSelected && isVisible && (
         <Html position={[0, 1.0, 0]} center>
@@ -590,7 +591,6 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
           </div>
         </Html>
       )}
-      <group position={[0, 0.6, 0]}>{children}</group>
     </>
   );
 
@@ -705,6 +705,7 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
           <DreiBox args={[0.08, 0.33, 0.45]} position={[0, 0, 0]}>
             <meshStandardMaterial color="#111" />
           </DreiBox>
+          <group position={[0.6, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>{children}</group>
         </group>
       </group>
       {isSelected && isVisible && (
@@ -715,7 +716,6 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
           </div>
         </Html>
       )}
-      <group position={[0, 0.6, 0]}>{children}</group>
     </>
   );
 

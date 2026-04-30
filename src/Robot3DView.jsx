@@ -137,6 +137,7 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, 
   const groupRef = useRef(null);
   const axis = config?.axis || 'Y';
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
   
   // Map 0-180 degrees to -90 to +90 degrees in radians
   const targetRad = (angle - 90) * (Math.PI / 180);
@@ -160,22 +161,30 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, 
   const content = (
     <>
       {/* Servo Body */}
-      <DreiBox 
-        visible={isVisible}
-        args={[1.2, 1.5, 1.2]} 
-        position={[0, 0, 0]}
-        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
-        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-      >
-        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} roughness={0.7} metalness={0.2} />
-        <Edges color="black" />
-        {/* Small detail/accent to see orientation */}
-        <DreiBox visible={isVisible} args={[1.25, 0.2, 0.2]} position={[0, 0.4, 0.6]}>
-           <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={0.5} />
-           <Edges color="black" />
+      {modelUrl ? (
+        <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+          <group visible={isVisible} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+          </group>
+        </React.Suspense>
+      ) : (
+        <DreiBox 
+          visible={isVisible}
+          args={[1.2, 1.5, 1.2]} 
+          position={[0, 0, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#3a3a4f")} roughness={0.7} metalness={0.2} />
+          <Edges color="black" />
+          {/* Small detail/accent to see orientation */}
+          <DreiBox visible={isVisible} args={[1.25, 0.2, 0.2]} position={[0, 0.4, 0.6]}>
+             <meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={0.5} />
+             <Edges color="black" />
+          </DreiBox>
         </DreiBox>
-      </DreiBox>
+      )}
       
       {isSelected && isVisible && (
         <Html position={[0, 1.5, 0]} center>
@@ -512,6 +521,7 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
   const groupRef = useRef(null);
   const shaftRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
 
   useFrame((state, delta) => {
      if (shaftRef.current && speed !== 0) {
@@ -521,14 +531,22 @@ const MotorNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
 
   const content = (
     <>
-      <Cylinder visible={isVisible} args={[0.3, 0.3, 0.8, 16]} position={[0, 0.4, 0]}
-        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
-        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-      >
-        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} metalness={0.5} roughness={0.3} />
-        <Edges color="black" />
-      </Cylinder>
+      {modelUrl ? (
+        <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+          <group visible={isVisible} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+          </group>
+        </React.Suspense>
+      ) : (
+        <Cylinder visible={isVisible} args={[0.3, 0.3, 0.8, 16]} position={[0, 0.4, 0]}
+          onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+          onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+          onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+        >
+          <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} metalness={0.5} roughness={0.3} />
+          <Edges color="black" />
+        </Cylinder>
+      )}
       <group visible={isVisible} ref={shaftRef} position={[0, 0.95, 0]}>
         <Cylinder args={[0.08, 0.08, 0.3, 16]}>
           <meshStandardMaterial color="#cbd5e1" metalness={0.9} />
@@ -560,6 +578,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
   const groupRef = useRef(null);
   const propRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
 
   useFrame((state, delta) => {
      if (propRef.current && speed !== 0) {
@@ -578,9 +597,19 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
         <Edges color="black" />
       </Cylinder>
       <group visible={isVisible} ref={propRef} position={[0, 0.45, 0]}>
-         <Cylinder args={[0.08, 0.08, 0.15, 8]}><meshStandardMaterial color="#94a3b8" /></Cylinder>
-         <DreiBox args={[1.8, 0.02, 0.2]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
-         <DreiBox args={[0.2, 0.02, 1.8]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+         {modelUrl ? (
+           <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+             <group onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+               <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+             </group>
+           </React.Suspense>
+         ) : (
+           <>
+             <Cylinder args={[0.08, 0.08, 0.15, 8]}><meshStandardMaterial color="#94a3b8" /></Cylinder>
+             <DreiBox args={[1.8, 0.02, 0.2]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+             <DreiBox args={[0.2, 0.02, 1.8]} position={[0, 0.05, 0]}><meshStandardMaterial color="#00f0ff" /></DreiBox>
+           </>
+         )}
          <group position={[0, 0.15, 0]}>{children}</group>
       </group>
       {isSelected && isVisible && (
@@ -605,20 +634,31 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
   const pRad = pitch * (Math.PI / 180);
   const rRad = roll * (Math.PI / 180);
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
 
   const content = (
     <>
-      <DreiBox visible={isVisible} args={[1.0, 0.2, 1.0]} position={[0, 0.1, 0]}
-        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
-        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-      >
-        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#8b5cf6")} />
-        <Edges color="black" />
-      </DreiBox>
-      <DreiBox visible={isVisible} args={[0.4, 0.2, 0.4]} position={[0, 0.25, 0]}>
-        <meshStandardMaterial color="#1e293b" />
-      </DreiBox>
+      {modelUrl ? (
+        <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+          <group visible={isVisible} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+          </group>
+        </React.Suspense>
+      ) : (
+        <>
+          <DreiBox visible={isVisible} args={[1.0, 0.2, 1.0]} position={[0, 0.1, 0]}
+            onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+            onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+            onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+          >
+            <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#8b5cf6")} />
+            <Edges color="black" />
+          </DreiBox>
+          <DreiBox visible={isVisible} args={[0.4, 0.2, 0.4]} position={[0, 0.25, 0]}>
+            <meshStandardMaterial color="#1e293b" />
+          </DreiBox>
+        </>
+      )}
       {isSelected && isVisible && (
         <Html position={[0, 1.2, 0]} center>
           <div className="bg-black/90 text-purple-400 p-2 rounded border border-purple-500 text-[10px] font-mono pointer-events-auto shadow-[0_0_10px_rgba(139,92,246,0.5)] flex flex-col gap-2 w-36">
@@ -676,6 +716,7 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
   const groupRef = useRef(null);
   const wheelRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
 
   useFrame((state, delta) => {
      if (wheelRef.current && speed !== 0) {
@@ -687,24 +728,29 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
     <>
       <group rotation={[0, 0, Math.PI / 2]}>
         <group visible={isVisible} ref={wheelRef}>
-          <Cylinder args={[0.5, 0.5, 0.3, 32]}
-            onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
-            onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
-            onPointerOut={() => { document.body.style.cursor = 'auto'; }}
-          >
-            <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#111111")} roughness={0.9} />
-          </Cylinder>
-          <Cylinder args={[0.3, 0.3, 0.32, 16]}>
-            <meshStandardMaterial color="#cbd5e1" metalness={0.6} />
-            <Edges color="#555" />
-          </Cylinder>
-          {/* Visual indicator (spokes) to make rotation noticeable */}
-          <DreiBox args={[0.45, 0.33, 0.08]} position={[0, 0, 0]}>
-            <meshStandardMaterial color="#111" />
-          </DreiBox>
-          <DreiBox args={[0.08, 0.33, 0.45]} position={[0, 0, 0]}>
-            <meshStandardMaterial color="#111" />
-          </DreiBox>
+          {modelUrl ? (
+            <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+              <group onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
+                <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+              </group>
+            </React.Suspense>
+          ) : (
+            <>
+              <Cylinder args={[0.5, 0.5, 0.3, 32]}
+                onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+                onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+                onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+              >
+                <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#111111")} roughness={0.9} />
+              </Cylinder>
+              <Cylinder args={[0.3, 0.3, 0.32, 16]}>
+                <meshStandardMaterial color="#cbd5e1" metalness={0.6} />
+                <Edges color="#555" />
+              </Cylinder>
+              <DreiBox args={[0.45, 0.33, 0.08]} position={[0, 0, 0]}><meshStandardMaterial color="#111" /></DreiBox>
+              <DreiBox args={[0.08, 0.33, 0.45]} position={[0, 0, 0]}><meshStandardMaterial color="#111" /></DreiBox>
+            </>
+          )}
           <group position={[0.6, 0, 0]} rotation={[0, 0, -Math.PI / 2]}>{children}</group>
         </group>
       </group>
@@ -952,6 +998,7 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
   const groupRef = useRef(null);
   const cameraRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { modelUrl, color, wireframe, opacity } = node.props || {};
 
   React.useEffect(() => {
     if (cameraRef.current) {
@@ -967,12 +1014,20 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
         onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
-        <DreiBox args={[0.6, 0.4, 0.6]}>
-          <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} />
-          <Edges color="black" />
-        </DreiBox>
-        <Cylinder args={[0.15, 0.15, 0.3, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#111" /></Cylinder>
-        <Cylinder args={[0.1, 0.1, 0.32, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={isActive ? 0.5 : 0} /></Cylinder>
+        {modelUrl ? (
+          <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+          </React.Suspense>
+        ) : (
+          <>
+            <DreiBox args={[0.6, 0.4, 0.6]}>
+              <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#eab308")} />
+              <Edges color="black" />
+            </DreiBox>
+            <Cylinder args={[0.15, 0.15, 0.3, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#111" /></Cylinder>
+            <Cylinder args={[0.1, 0.1, 0.32, 16]} position={[0, 0, 0.4]} rotation={[Math.PI / 2, 0, 0]}><meshStandardMaterial color="#00f0ff" emissive="#00f0ff" emissiveIntensity={isActive ? 0.5 : 0} /></Cylinder>
+          </>
+        )}
         <PerspectiveCamera ref={cameraRef} position={[0, 0, 0.6]} rotation={[0, Math.PI, 0]} fov={60} near={0.1} far={100} />
       </group>
       {isSelected && isVisible && (
@@ -1339,9 +1394,10 @@ export default function Robot3DView({
         const isSelected = selectedNodeId === n.id;
         const scale = [cfg.scaleX ?? 1, cfg.scaleY ?? 1, cfg.scaleZ ?? 1];
         const isVisible = cfg.visible !== false;
+        const isMechanical = ['WHEEL', 'MOTOR', 'PROPELLER', 'SERVO', 'GYROSCOPE', 'CAMERA'].includes(n.type);
         
         let content = null;
-        if (n.props?.modelUrl) {
+        if (n.props?.modelUrl && !isMechanical) {
             content = <Model3DNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Model3DNode>;
         }
         else if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;

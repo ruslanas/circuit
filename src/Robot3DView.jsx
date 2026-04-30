@@ -164,7 +164,8 @@ const ServoNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, 
       {modelUrl ? (
         <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
           <group visible={isVisible} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
-            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
           </group>
         </React.Suspense>
       ) : (
@@ -600,7 +601,7 @@ const PropellerNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMo
          {modelUrl ? (
            <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
              <group onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
-               <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+               <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
              </group>
            </React.Suspense>
          ) : (
@@ -641,7 +642,7 @@ const GyroscopeNode = ({ node, config, pitch = 0, roll = 0, isSelected, isBurned
       {modelUrl ? (
         <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
           <group visible={isVisible} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
-            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
           </group>
         </React.Suspense>
       ) : (
@@ -731,7 +732,7 @@ const WheelNode = ({ node, config, speed = 0, isSelected, isBurned, isEditMode, 
           {modelUrl ? (
             <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
               <group onClick={(e) => { e.stopPropagation(); onSelect(node.id); }} onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }} onPointerOut={() => { document.body.style.cursor = 'auto'; }}>
-                <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+                <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
               </group>
             </React.Suspense>
           ) : (
@@ -1016,7 +1017,7 @@ const CameraNode = ({ node, config, isActive = false, isSelected, isBurned, isEd
       >
         {modelUrl ? (
           <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
-            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} />
+            <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} />
           </React.Suspense>
         ) : (
           <>
@@ -1065,7 +1066,8 @@ const ModelContent = ({ url, color, wireframe, opacity }) => {
   return <primitive object={clonedScene} />;
 }
 
-const ModelLoader = ({ url, color, wireframe, opacity }) => {
+const ModelLoader = (props) => {
+  const { url, color, wireframe, opacity, modelOffsetX = 0, modelOffsetY = 0, modelOffsetZ = 0, modelPitch = 0, modelYaw = 0, modelRoll = 0, modelScaleX = 1, modelScaleY = 1, modelScaleZ = 1 } = props;
   const [localUrl, setLocalUrl] = useState(null);
 
   React.useEffect(() => {
@@ -1095,7 +1097,15 @@ const ModelLoader = ({ url, color, wireframe, opacity }) => {
 
   if (!localUrl) return null;
 
-  return <ModelContent url={localUrl} color={color} wireframe={wireframe} opacity={opacity} />;
+  return (
+    <group
+      position={[modelOffsetX, modelOffsetY, modelOffsetZ]}
+      rotation={[modelPitch * (Math.PI / 180), modelYaw * (Math.PI / 180), modelRoll * (Math.PI / 180)]}
+      scale={[modelScaleX, modelScaleY, modelScaleZ]}
+    >
+      <ModelContent url={localUrl} color={color} wireframe={wireframe} opacity={opacity} />
+    </group>
+  );
 };
 
 const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
@@ -1111,7 +1121,7 @@ const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, o
         onPointerOut={() => { document.body.style.cursor = 'auto'; }}
       >
         <React.Suspense fallback={<DreiBox args={[1,1,1]}><meshBasicMaterial color="#333" wireframe /></DreiBox>}>
-          {modelUrl ? <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} /> : <DreiBox args={[1,1,1]}><meshStandardMaterial color="#0088aa" /><Edges color="black" /></DreiBox>}
+          {modelUrl ? <ModelLoader url={modelUrl} color={color} wireframe={wireframe} opacity={opacity} {...(node.props || {})} /> : <DreiBox args={[1,1,1]}><meshStandardMaterial color="#0088aa" /><Edges color="black" /></DreiBox>}
         </React.Suspense>
       </group>
       {isSelected && isVisible && (

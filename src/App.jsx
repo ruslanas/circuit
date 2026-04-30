@@ -3001,7 +3001,9 @@ const App = () => {
                   </div>
 
                   <div className="space-y-3 mb-4">
-                    {Object.entries(comp.props).map(([key, val]) => (
+                    {Object.entries(comp.props)
+                      .filter(([key]) => !['modelUrl', 'modelOffsetX', 'modelOffsetY', 'modelOffsetZ', 'modelPitch', 'modelYaw', 'modelRoll', 'modelScaleX', 'modelScaleY', 'modelScaleZ'].includes(key))
+                      .map(([key, val]) => (
                       <div key={key}>
                         <label className="block text-[9px] font-semibold text-cyan-600 mb-1 uppercase tracking-wider cyber-text">{key}</label>
                         {typeof val === 'boolean' ? (
@@ -3124,6 +3126,54 @@ const App = () => {
                           )}
                           <input id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => handleModelUpload(e, comp.id)} />
                       </div>
+
+                      {comp.props.modelUrl && (() => {
+                         const renderPropInput = (label, propName, step, defaultVal) => (
+                            <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider text-cyan-600">{label}
+                              <input 
+                                type="number" step={step} 
+                                value={comp.props[propName] !== undefined ? comp.props[propName] : defaultVal} 
+                                onFocus={() => { dragSnapshotRef.current = { components, wires }; }}
+                                onChange={(e) => {
+                                  const val = e.target.value === '' ? defaultVal : parseFloat(e.target.value);
+                                  setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [propName]: val } } : c));
+                                }}
+                                onBlur={(e) => {
+                                  if (dragSnapshotRef.current) {
+                                    const oldComp = dragSnapshotRef.current.components.find(c => c.id === selectedIds[0]);
+                                    const val = e.target.value === '' ? defaultVal : parseFloat(e.target.value);
+                                    if (oldComp && oldComp.props[propName] !== val) {
+                                      pushStateToHistory(dragSnapshotRef.current.components, dragSnapshotRef.current.wires);
+                                    }
+                                    dragSnapshotRef.current = null;
+                                  }
+                                }}
+                                className="cyber-input p-1 text-center rounded-sm" 
+                              />
+                            </label>
+                         );
+
+                         return (
+                           <div className="mt-3 space-y-2 border-t border-cyan-900/50 pt-2">
+                              <h5 className="text-[8px] font-bold text-cyan-700 uppercase tracking-widest">Model Origin / Transform</h5>
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {renderPropInput('Offset X', 'modelOffsetX', "0.1", 0)}
+                                {renderPropInput('Offset Y', 'modelOffsetY', "0.1", 0)}
+                                {renderPropInput('Offset Z', 'modelOffsetZ', "0.1", 0)}
+                              </div>
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {renderPropInput('Pitch', 'modelPitch', "15", 0)}
+                                {renderPropInput('Yaw', 'modelYaw', "15", 0)}
+                                {renderPropInput('Roll', 'modelRoll', "15", 0)}
+                              </div>
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {renderPropInput('Scale X', 'modelScaleX', "0.1", 1)}
+                                {renderPropInput('Scale Y', 'modelScaleY', "0.1", 1)}
+                                {renderPropInput('Scale Z', 'modelScaleZ', "0.1", 1)}
+                              </div>
+                           </div>
+                         );
+                      })()}
                   </div>
                   {/* Physics Readout */}
                   {isSimulating && (

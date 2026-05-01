@@ -347,3 +347,18 @@ export const CameraSymbol = ({ size, className, style }) => (
     <circle cx="12" cy="13" r="4" />
   </svg>
 );
+
+export const JoystickSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="4" y="4" width="16" height="16" rx="4" />
+    <circle cx="12" cy="12" r="3" fill="currentColor" stroke="none" />
+    <line x1="12" y1="12" x2="16" y2="8" strokeWidth="1.5" />
+  </svg>
+);
+
+export const AeroControlSurfaceSymbol = ({ size, className, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} style={style}>
+    <rect x="2" y="10" width="20" height="4" rx="1" />
+    <path d="M 6 14 L 10 20 L 18 20 L 14 14" fill="currentColor" fillOpacity="0.3" />
+  </svg>
+);

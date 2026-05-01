@@ -1129,6 +1129,125 @@ const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, o
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const JoystickNode = ({ node, config, xPos = 50, yPos = 50, isSelected, isBurned, isEditMode, isVisible = true, onSelect, onUpdateOffset, onUpdateProp, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  
+  const tiltX = ((xPos - 50) / 50) * (Math.PI / 6); // Max 30 deg
+  const tiltZ = ((yPos - 50) / 50) * (Math.PI / 6);
+
+  const content = (
+    <>
+      <DreiBox visible={isVisible} args={[1.2, 0.4, 1.2]} position={[0, 0.2, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#1e293b")} />
+        <Edges color="black" />
+      </DreiBox>
+      <DreiBox visible={isVisible} args={[0.8, 0.2, 0.8]} position={[0, 0.5, 0]}>
+        <meshStandardMaterial color="#0f172a" />
+      </DreiBox>
+
+      <group visible={isVisible} position={[0, 0.6, 0]} rotation={[tiltZ, 0, -tiltX]}>
+        <Cylinder args={[0.05, 0.05, 0.6]} position={[0, 0.3, 0]}>
+          <meshStandardMaterial color="#cbd5e1" metalness={0.8} />
+        </Cylinder>
+        <mesh position={[0, 0.7, 0]}>
+          <sphereGeometry args={[0.2, 16, 16]} />
+          <meshStandardMaterial color="#ff003c" />
+        </mesh>
+      </group>
+
+      {isSelected && isVisible && (
+        <Html position={[0, 1.5, 0]} center>
+          <div className="bg-black/90 text-yellow-400 p-1 rounded border border-yellow-500 text-[10px] font-mono whitespace-nowrap shadow-[0_0_10px_rgba(250,204,21,0.5)]">
+            {isBurned ? (
+              <div className="text-red-500 font-bold animate-pulse text-center leading-tight">OVERLOAD<br/><span className="text-[8px] font-normal">{typeof isBurned === 'string' ? isBurned : 'LIMIT EXCEEDED'}</span></div>
+            ) : (
+              <>
+                <div className="text-center font-bold mb-1">JOYSTICK</div>
+                <div className="flex gap-2">
+                   <span>X:{Math.round(xPos)}</span>
+                   <span>Y:{Math.round(yPos)}</span>
+                </div>
+              </>
+            )}
+          </div>
+        </Html>
+      )}
+
+      <group position={[0, 1.0, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return (
+       <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}>
+         <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>
+       </TransformControls>
+     );
+  }
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
+const AeroControlSurfaceNode = ({ node, config, angle = 0, isSelected, isBurned, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
+  const flapRef = useRef(null);
+  const groupRef = useRef(null);
+  const axis = config?.axis || 'X';
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  
+  const targetRad = (angle - 90) * (Math.PI / 180) * 0.5; // +/- 45 deg max
+  const targetRadRef = useRef(targetRad);
+  targetRadRef.current = targetRad;
+  const prevAxis = useRef(axis);
+  
+  useFrame((state, delta) => {
+    if (flapRef.current) {
+      if (prevAxis.current !== axis) {
+        flapRef.current.rotation.set(0, 0, 0);
+        prevAxis.current = axis;
+      }
+      const axisLower = axis.toLowerCase();
+      const current = flapRef.current.rotation[axisLower];
+      flapRef.current.rotation[axisLower] += (targetRadRef.current - current) * 15 * delta;
+    }
+  });
+
+  const content = (
+    <>
+      <DreiBox visible={isVisible} args={[2.0, 0.1, 0.2]} position={[0, 0, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        <meshStandardMaterial color={isBurned ? "#4a1111" : (isSelected ? "#0088aa" : "#333")} />
+        <Edges color="black" />
+      </DreiBox>
+      <group visible={isVisible} ref={flapRef} position={[0, 0, 0.1]}>
+        <DreiBox args={[1.9, 0.05, 0.8]} position={[0, 0, 0.4]}>
+          <meshStandardMaterial color={isBurned ? "#4a1111" : "#00f0ff"} metalness={0.5} roughness={0.5} />
+          <Edges color="black" />
+        </DreiBox>
+        <group position={[0, 0, 0.8]}>{children}</group>
+      </group>
+      {isSelected && isVisible && (
+        <Html position={[0, 1.0, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap shadow-[0_0_10px_rgba(0,240,255,0.5)] pointer-events-none">
+            FLAP: {Math.round((angle - 90) * 0.5)}°
+          </div>
+        </Html>
+      )}
+    </>
+  );
+
+  if (isSelected && isEditMode) {
+     return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  }
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 const PhysicsRoot = ({ children, isStatic, isSimulating, isEditMode, floorLevel, rootNodeId, nodes, nodeConfig, nodeValues, showTrack }) => {
   const groupRef = useRef(null);
   const velocity = useRef(new THREE.Vector3());
@@ -1382,7 +1501,7 @@ export default function Robot3DView({
 
   const hasWorkBed = nodes.some(n => n.type === 'WORK_BED');
   const floorLevel = hasWorkBed ? 0.2 : 0;
-  const interactiveNodes = nodes.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER', 'GYROSCOPE'].includes(n.type));
+  const interactiveNodes = nodes.filter(n => ['SWITCH', 'PUSH_BUTTON', 'POTENTIOMETER', 'GYROSCOPE', 'JOYSTICK'].includes(n.type));
   const activeCameras = nodes.filter(n => n.type === 'CAMERA' && nodeValues[n.id]?.isActive && !burnedNodes[n.id]);
 
   const buildTree = (parentId) => {
@@ -1401,6 +1520,8 @@ export default function Robot3DView({
             content = <Model3DNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Model3DNode>;
         }
         else if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
+        else if (n.type === 'AERO_CONTROL_SURFACE') content = <AeroControlSurfaceNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroControlSurfaceNode>;
+        else if (n.type === 'JOYSTICK') content = <JoystickNode node={n} config={cfg} xPos={val?.xPos} yPos={val?.yPos} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</JoystickNode>;
         else if (n.type === 'POTENTIOMETER') content = <PotentiometerNode node={n} config={cfg} position={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</PotentiometerNode>;
         else if (n.type === 'PUSH_BUTTON') content = <ButtonNode node={n} config={cfg} isPressed={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</ButtonNode>;
         else if (n.type === 'SWITCH') content = <SwitchNode node={n} config={cfg} isOpen={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</SwitchNode>;
@@ -1507,9 +1628,9 @@ export default function Robot3DView({
                     <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Scale Y<input type="number" step="0.1" value={cfg.scaleY === undefined ? 1 : cfg.scaleY} onChange={(e) => updateConfig(n.id, 'scaleY', isNaN(e.target.valueAsNumber) ? 1 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
                     <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider">Scale Z<input type="number" step="0.1" value={cfg.scaleZ === undefined ? 1 : cfg.scaleZ} onChange={(e) => updateConfig(n.id, 'scaleZ', isNaN(e.target.valueAsNumber) ? 1 : e.target.valueAsNumber)} className="cyber-input p-1 text-center rounded-sm" /></label>
                   </div>
-                  {n.type === 'SERVO' && (
+                  {(n.type === 'SERVO' || n.type === 'AERO_CONTROL_SURFACE') && (
                     <label className="text-[9px] flex flex-col gap-1 uppercase tracking-wider" onClick={(e) => e.stopPropagation()}>Rotation Axis
-                      <select value={cfg.axis || 'Y'} onChange={(e) => updateConfig(n.id, 'axis', e.target.value)} className="cyber-input p-1.5 rounded-sm">
+                      <select value={cfg.axis || (n.type === 'AERO_CONTROL_SURFACE' ? 'X' : 'Y')} onChange={(e) => updateConfig(n.id, 'axis', e.target.value)} className="cyber-input p-1.5 rounded-sm">
                         <option value="X">Pitch (X-Axis)</option><option value="Y">Yaw (Y-Axis)</option><option value="Z">Roll (Z-Axis)</option>
                       </select>
                     </label>
@@ -1548,7 +1669,7 @@ export default function Robot3DView({
               let bRenderIdx = 0;
               let aRenderIdx = 0;
               const btnKeys = ['1','2','3','4','5','6','7','8','9','0'];
-              const axisKeys = [{up: 'W', down: 'S'}, {up: 'E', down: 'D'}, {up: 'R', down: 'F'}, {up: 'T', down: 'G'}, {up: 'Y', down: 'H'}];
+              const axisKeys = [{up: 'W', down: 'S', left: 'A', right: 'D'}, {up: 'I', down: 'K', left: 'J', right: 'L'}, {up: 'R', down: 'F'}, {up: 'T', down: 'G'}, {up: 'Y', down: 'H'}];
               
               return interactiveNodes.map(n => {
                 const val = nodeValues[n.id];
@@ -1623,6 +1744,49 @@ export default function Robot3DView({
                          <input type="range" orient="vertical" min="-45" max="45" step="1" value={roll} onChange={(e) => onUpdateProp(n.id, 'roll', parseFloat(e.target.value))} onPointerDown={(e) => e.stopPropagation()} className="accent-purple-500 cursor-pointer" style={{ WebkitAppearance: 'slider-vertical', appearance: 'slider-vertical', width: '12px', height: '60px' }} />
                          <kbd className="text-[8px] text-purple-400 bg-purple-900/30 px-1 rounded font-mono border border-purple-800/50">{rKey.down}</kbd>
                          <span className="text-[9px] text-purple-400 font-mono">{Math.round(roll)}°</span>
+                      </div>
+                    </div>
+                  );
+                }
+                if (n.type === 'JOYSTICK') {
+                  const jKey = axisKeys[aRenderIdx++] || {up:'?', down:'?', left:'?', right:'?'};
+                  const xPos = val?.xPos !== undefined ? val.xPos : 50;
+                  const yPos = val?.yPos !== undefined ? val.yPos : 50;
+                  return (
+                    <div key={n.id} className="flex flex-col items-center justify-center gap-2 min-w-[70px] shrink-0 border-l border-r border-yellow-900/30 px-2">
+                      <span className="text-[9px] text-yellow-600 font-bold uppercase tracking-wider">JOY {n.id.slice(0,4)}</span>
+                      <div className="flex flex-col items-center justify-center -space-y-1">
+                          <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50 z-10">{jKey.up}</kbd>
+                          <div className="flex items-center gap-1">
+                              <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50">{jKey.left}</kbd>
+                              <div 
+                                 className="relative w-12 h-12 bg-yellow-900/30 border border-yellow-500/50 rounded-full cursor-crosshair touch-none"
+                                 onPointerDown={(e) => { e.stopPropagation(); if(e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId); }}
+                                 onPointerMove={(e) => {
+                                     if (e.buttons > 0) {
+                                         const rect = e.currentTarget.getBoundingClientRect();
+                                         const x = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                                         const y = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+                                         onUpdateProp(n.id, 'xPos', x * 100);
+                                         onUpdateProp(n.id, 'yPos', (1 - y) * 100);
+                                     }
+                                 }}
+                                 onPointerUp={(e) => {
+                                     e.stopPropagation();
+                                     try { e.target.releasePointerCapture(e.pointerId); } catch(err){}
+                                     onUpdateProp(n.id, 'xPos', 50);
+                                     onUpdateProp(n.id, 'yPos', 50);
+                                 }}
+                                 onPointerCancel={() => {
+                                     onUpdateProp(n.id, 'xPos', 50);
+                                     onUpdateProp(n.id, 'yPos', 50);
+                                 }}
+                              >
+                                 <div className="absolute w-3 h-3 bg-yellow-400 rounded-full pointer-events-none shadow-[0_0_8px_#facc15]" style={{ left: `${xPos}%`, top: `${100 - yPos}%`, transform: 'translate(-50%, -50%)' }} />
+                              </div>
+                              <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50">{jKey.right}</kbd>
+                          </div>
+                          <kbd className="text-[8px] text-yellow-500 bg-yellow-900/30 px-1 rounded font-mono border border-yellow-800/50 z-10">{jKey.down}</kbd>
                       </div>
                     </div>
                   );

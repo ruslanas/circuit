@@ -315,6 +315,23 @@ export function simulateTick({
         const rBase = Math.max(1e-3, vc.props.resistance !== undefined ? vc.props.resistance : 10000);
         resistors.push({ n1: n0, n2: n2, R: Math.max(1e-3, rBase * pos), id: vc.id + '_R1' });
         resistors.push({ n1: n2, n2: n1, R: Math.max(1e-3, rBase * (1 - pos)), id: vc.id + '_R2' });
+      } else if (vc.type === 'JOYSTICK') {
+        const xPos = Math.max(0, Math.min(100, vc.props.xPos !== undefined ? vc.props.xPos : 50)) / 100;
+        const yPos = Math.max(0, Math.min(100, vc.props.yPos !== undefined ? vc.props.yPos : 50)) / 100;
+        const rBase = Math.max(1e-3, vc.props.resistance !== undefined ? vc.props.resistance : 10000);
+        
+        const nXa = tNodes[vc.virtualTerminals[0]];
+        const nXw = tNodes[vc.virtualTerminals[1]];
+        const nXb = tNodes[vc.virtualTerminals[2]];
+        const nYa = tNodes[vc.virtualTerminals[3]];
+        const nYw = tNodes[vc.virtualTerminals[4]];
+        const nYb = tNodes[vc.virtualTerminals[5]];
+
+        if (nXa !== undefined && nXw !== undefined) resistors.push({ n1: nXa, n2: nXw, R: Math.max(1e-3, rBase * xPos), id: vc.id + '_RX1' });
+        if (nXw !== undefined && nXb !== undefined) resistors.push({ n1: nXw, n2: nXb, R: Math.max(1e-3, rBase * (1 - xPos)), id: vc.id + '_RX2' });
+        
+        if (nYa !== undefined && nYw !== undefined) resistors.push({ n1: nYa, n2: nYw, R: Math.max(1e-3, rBase * yPos), id: vc.id + '_RY1' });
+        if (nYw !== undefined && nYb !== undefined) resistors.push({ n1: nYw, n2: nYb, R: Math.max(1e-3, rBase * (1 - yPos)), id: vc.id + '_RY2' });
       } else if (vc.type === 'SWITCH') {
         resistors.push({ n1: n0, n2: n1, R: vc.props.isOpen ? 1e9 : 1e-3, id: vc.id });
       } else if (vc.type === 'PUSH_BUTTON') {
@@ -927,6 +944,13 @@ export function simulateTick({
           });
           branchCurrentsMap[vc.id] = totalCurrent;
           if (totalCurrent > 1e-5) activeMap[vc.id.split('_')[0]] = true;
+        } else if (vc.type === 'JOYSTICK') {
+          const ix1 = branchCurrentsMap[`${vc.id}_RX1`] || 0;
+          const ix2 = branchCurrentsMap[`${vc.id}_RX2`] || 0;
+          const iy1 = branchCurrentsMap[`${vc.id}_RY1`] || 0;
+          const iy2 = branchCurrentsMap[`${vc.id}_RY2`] || 0;
+          branchCurrentsMap[vc.id] = Math.max(Math.abs(ix1), Math.abs(ix2), Math.abs(iy1), Math.abs(iy2));
+          if (branchCurrentsMap[vc.id] > 1e-5) activeMap[vc.id.split('_')[0]] = true;
         } else if (vc.type === 'BUCK_CONVERTER') {
           const vIdx = vSources.findIndex(vs => vs.id === vc.id + "_OUT");
           const iOut = vIdx !== -1 ? x[(N - 1) + vIdx] : 0;
@@ -961,6 +985,11 @@ export function simulateTick({
           branchCurrentsMap[`${c.id}_OUT2`] = iQ3 - iQ4;
 
           if (Math.abs(iQ1 - iQ2) > 1e-5 || Math.abs(iQ3 - iQ4) > 1e-5) activeMap[c.id] = true;
+        } else if (c.type === 'SERVO' || c.type === 'AERO_CONTROL_SURFACE') {
+          const iVcc = branchCurrentsMap[`${c.id}_R_vcc`] || 0;
+          const iSig = branchCurrentsMap[`${c.id}_R_sig`] || 0;
+          branchCurrentsMap[c.id] = Math.max(Math.abs(iVcc), Math.abs(iSig));
+          if (branchCurrentsMap[c.id] > 1e-5) activeMap[c.id] = true;
         }
       });
 
@@ -1012,7 +1041,7 @@ export function simulateTick({
       else if (type === 'NPN' || type === 'PNP') {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
       }
-      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE', 'CAMERA'].includes(type)) {
+      else if (['MOTOR', 'PROPELLER', 'WHEEL', 'HBRIDGE', 'INDUCTOR', 'BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'OPAMP', 'COMPARATOR', 'SWITCH', 'PUSH_BUTTON', 'TRANSFORMER', 'RAM', 'TIMER555', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'GYROSCOPE', 'CAMERA', 'JOYSTICK', 'SERVO', 'AERO_CONTROL_SURFACE'].includes(type)) {
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
         if (type === 'CAMERA') {
             const vIn = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
@@ -1026,6 +1055,18 @@ export function simulateTick({
         const vIn = (nodeVoltagesMap[`${c.id}-0`] || 0) - (nodeVoltagesMap[`${c.id}-1`] || 0);
         if (Math.abs(current) > maxI) { isBurned = true; burnReason = "MAX CURRENT EXCEEDED"; }
         else if (Math.abs(vIn) > maxV) { isBurned = true; burnReason = "MAX VOLTAGE EXCEEDED"; }
+      } else if (type === 'JOYSTICK') {
+        const xPos = Math.max(0, Math.min(100, c.props?.xPos !== undefined ? c.props.xPos : 50)) / 100;
+        const yPos = Math.max(0, Math.min(100, c.props?.yPos !== undefined ? c.props.yPos : 50)) / 100;
+        const ix1 = branchCurrentsMap[`${c.id}_RX1`] || 0;
+        const ix2 = branchCurrentsMap[`${c.id}_RX2`] || 0;
+        const iy1 = branchCurrentsMap[`${c.id}_RY1`] || 0;
+        const iy2 = branchCurrentsMap[`${c.id}_RY2`] || 0;
+        const pX = ix1 * ix1 * (rBase * xPos) + ix2 * ix2 * (rBase * (1-xPos));
+        const pY = iy1 * iy1 * (rBase * yPos) + iy2 * iy2 * (rBase * (1-yPos));
+        if (pX + pY > maxP) {
+           isBurned = true; burnReason = "MAX POWER EXCEEDED";
+        }
       } else if (type === 'SEVEN_SEGMENT') {
         let segmentBurned = false;
         ['a', 'b', 'c', 'd', 'e', 'f', 'g'].forEach(seg => {

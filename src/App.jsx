@@ -892,6 +892,11 @@ const App = () => {
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!file.name.toLowerCase().match(/\.(glb|gltf)$/)) {
+        alert("Please select a valid .glb or .gltf 3D model file.");
+        return;
+    }
+
     try {
         await saveModel(compId, file);
         const modelUrl = `idb://${compId}`;
@@ -3182,7 +3187,7 @@ const App = () => {
                                   🗑️
                               </button>
                           )}
-                          <input id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => handleModelUpload(e, comp.id)} />
+                          <input id={`upload-model-${comp.id}`} type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json,*/*" className="hidden" onChange={(e) => handleModelUpload(e, comp.id)} />
                       </div>
                   </div>
                   {/* Physics Readout */}

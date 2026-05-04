@@ -675,6 +675,46 @@ export const EXAMPLES = [
   },
   {
     category: "3D & Robotics",
+    name: "Joystick Car (DC + Servo)",
+    data: {
+      components: [
+        { id: "bat", type: "BATTERY", x: 60, y: 160, rotation: 0, props: { voltage: 5, maxCurrent: 10 } },
+        { id: "gnd", type: "GROUND", x: 60, y: 260, rotation: 0, props: {} },
+        { id: "joy", type: "JOYSTICK", x: 200, y: 160, rotation: 0, props: { xPos: 50, yPos: 50 } },
+        { id: "srv", type: "SERVO", x: 380, y: 80, rotation: 0, props: {} },
+        { id: "npn", type: "NPN", x: 380, y: 220, rotation: 0, props: { beta: 100 } },
+        { id: "wRear", type: "WHEEL", x: 540, y: 160, rotation: 0, props: { resistance: 20 } },
+        { id: "wFront", type: "WHEEL", x: 540, y: 260, rotation: 0, props: { resistance: 20 } },
+        { id: "chassis", type: "CAR_CHASSIS", x: 680, y: 160, rotation: 0, props: {} }
+      ],
+      wires: [
+        { id: "w1", from: { compId: "gnd", termIdx: 0 }, to: { compId: "joy", termIdx: 0 } },
+        { id: "w2", from: { compId: "bat", termIdx: 0 }, to: { compId: "joy", termIdx: 2 } },
+        { id: "w3", from: { compId: "gnd", termIdx: 0 }, to: { compId: "joy", termIdx: 3 } },
+        { id: "w4", from: { compId: "bat", termIdx: 0 }, to: { compId: "joy", termIdx: 5 } },
+        { id: "w5", from: { compId: "bat", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w6", from: { compId: "bat", termIdx: 0 }, to: { compId: "srv", termIdx: 0 } },
+        { id: "w7", from: { compId: "joy", termIdx: 1 }, to: { compId: "srv", termIdx: 1 } },
+        { id: "w8", from: { compId: "gnd", termIdx: 0 }, to: { compId: "srv", termIdx: 2 } },
+        { id: "w9", from: { compId: "bat", termIdx: 0 }, to: { compId: "npn", termIdx: 1 } },
+        { id: "w10", from: { compId: "joy", termIdx: 4 }, to: { compId: "npn", termIdx: 0 } },
+        { id: "w11", from: { compId: "npn", termIdx: 2 }, to: { compId: "wRear", termIdx: 0 } },
+        { id: "w12", from: { compId: "wRear", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } },
+        { id: "w13", from: { compId: "npn", termIdx: 2 }, to: { compId: "wFront", termIdx: 0 } },
+        { id: "w14", from: { compId: "wFront", termIdx: 1 }, to: { compId: "gnd", termIdx: 0 } }
+      ],
+      servoConfig: {
+        "chassis": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: null },
+        "bat": { offsetX: 0, offsetY: 0.3, offsetZ: 0.5, parentId: "chassis", scaleX: 0.6, scaleY: 0.6, scaleZ: 0.6 },
+        "joy": { offsetX: 0, offsetY: 0.5, offsetZ: 0, parentId: "chassis", scaleX: 0.8, scaleY: 0.8, scaleZ: 0.8 },
+        "srv": { axis: "Y", offsetX: 0, offsetY: 0.2, offsetZ: -1.5, parentId: "chassis" },
+        "wFront": { offsetX: 0, offsetY: -0.4, offsetZ: 0, parentId: "srv" },
+        "wRear": { offsetX: 0, offsetY: -0.2, offsetZ: 1.5, parentId: "chassis" }
+      }
+    }
+  },
+  {
+    category: "3D & Robotics",
     name: "3D RC Car",
     data: {
       "components": [

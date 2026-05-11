@@ -362,6 +362,12 @@ Example: (I0 AND NOT I1) OR I1`,
     icon: Box, color: '#00f0ff',
     terminals: [],
     defaultProps: { color: '#ffffff', wireframe: false, opacity: 1 }
+  },
+  SOLID_3D: {
+    id: 'SOLID_3D', name: '3D Solid', desc: 'Configurable 3D solid primitive (Box, Sphere, Cylinder).',
+    icon: Box, color: '#00f0ff',
+    terminals: [],
+    defaultProps: { shape: 'box', operation: 'none', color: '#ffffff', wireframe: false, opacity: 1, sizeX: 1, sizeY: 1, sizeZ: 1 }
   }
 };
 
@@ -369,7 +375,7 @@ const COMPONENT_GROUPS = {
   'Power & Sources': ['BATTERY', 'AC_SOURCE', 'PWM', 'OSCILLATOR', 'BUCK_CONVERTER', 'GROUND'],
   'Passives & Switches': ['RESISTOR', 'CAPACITOR', 'INDUCTOR', 'TRANSFORMER', 'POTENTIOMETER', 'JOYSTICK', 'SWITCH', 'PUSH_BUTTON'],
   'Semiconductors': ['DIODE', 'NPN', 'PNP', 'HBRIDGE', 'OPAMP', 'COMPARATOR', 'PLC', 'SHIFT_REGISTER', 'LATCH', 'TIMER555', 'RAM', 'CCD', 'GYROSCOPE'],
-  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'AERO_CONTROL_SURFACE', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL', 'MODEL_3D']
+  'Outputs': ['LED', 'MOTOR', 'PROPELLER', 'WHEEL', 'SERVO', 'AERO_CONTROL_SURFACE', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'CAMERA', 'WORK_BED', 'CAR_CHASSIS', 'X_CHASSIS', 'AERO_SHELL', 'MODEL_3D', 'SOLID_3D']
 };
 
 // Map compound devices to base physical components
@@ -478,6 +484,7 @@ const getComponentValueLabel = (comp) => {
   if (comp.type === 'X_CHASSIS') return 'X-FRAME';
   if (comp.type === 'AERO_SHELL') return 'SHELL';
   if (comp.type === 'MODEL_3D') return 'MODEL';
+  if (comp.type === 'SOLID_3D') return comp.props.shape ? comp.props.shape.toUpperCase() : 'SOLID';
   return '';
 };
 
@@ -1830,6 +1837,9 @@ const App = () => {
         else if (c.type === 'MODEL_3D') {
             spice += `* 3D Model component ${name} omitted (structural only)\n`;
         }
+        else if (c.type === 'SOLID_3D') {
+            spice += `* 3D Solid component ${name} omitted (structural only)\n`;
+        }
         else if (c.type === 'BUCK_CONVERTER') {
             spice += `* Buck Converter component ${name} omitted (behavioral block)\n`;
         }
@@ -2170,7 +2180,7 @@ const App = () => {
   // Compute node values for the 3D View
   const nodeValues = {};
   if (viewMode === '3D') {
-    components.filter(c => ['SERVO', 'AERO_CONTROL_SURFACE', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA', 'MODEL_3D', 'JOYSTICK'].includes(c.type)).forEach(comp => {
+    components.filter(c => ['SERVO', 'AERO_CONTROL_SURFACE', 'POTENTIOMETER', 'PUSH_BUTTON', 'SWITCH', 'SEVEN_SEGMENT', 'SOLDERING_IRON', 'WORK_BED', 'MOTOR', 'PROPELLER', 'GYROSCOPE', 'WHEEL', 'CAR_CHASSIS', 'X_CHASSIS', 'LED', 'AERO_SHELL', 'BATTERY', 'CAMERA', 'MODEL_3D', 'SOLID_3D', 'JOYSTICK'].includes(c.type)).forEach(comp => {
       if (comp.type === 'SERVO' || comp.type === 'AERO_CONTROL_SURFACE') {
         let angle = 0;
         if (isSimulating) {
@@ -3084,6 +3094,33 @@ const App = () => {
                             <option value="TRIANGLE">TRIANGLE</option>
                             <option value="SAW">SAW</option>
                           </select>
+                        ) : key === 'shape' ? (
+                          <select 
+                            value={val}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: newVal } } : c));
+                            }}
+                            className="w-full cyber-input rounded-sm p-1.5 text-[10px] bg-[#050507]"
+                          >
+                            <option value="box">BOX</option>
+                            <option value="sphere">SPHERE</option>
+                            <option value="cylinder">CYLINDER</option>
+                          </select>
+                        ) : key === 'operation' ? (
+                          <select 
+                            value={val}
+                            onChange={(e) => {
+                              const newVal = e.target.value;
+                              setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: newVal } } : c));
+                            }}
+                            className="w-full cyber-input rounded-sm p-1.5 text-[10px] bg-[#050507]"
+                          >
+                            <option value="none">NONE (BASE)</option>
+                            <option value="add">ADD (UNION)</option>
+                            <option value="subtract">SUBTRACT</option>
+                            <option value="intersect">INTERSECT</option>
+                          </select>
                         ) : key === 'position' || key === 'opacity' ? (
                           <div className="flex items-center gap-2">
                             <input 
@@ -3123,6 +3160,7 @@ const App = () => {
                               if (key === 'frequency' && (val === '' || val <= 0)) finalVal = 1;
                               if (key === 'coupling') finalVal = Math.max(0, Math.min(0.999, val === '' ? 0.99 : val));
                               if (key === 'opacity') finalVal = Math.max(0, Math.min(1, val === '' ? 1 : val));
+                              if (['sizeX', 'sizeY', 'sizeZ'].includes(key) && (val === '' || val <= 0)) finalVal = 0.1;
                               if (finalVal !== val) {
                                 setComponents(prev => prev.map(c => c.id === selectedIds[0] ? { ...c, props: { ...c.props, [key]: finalVal } } : c));
                               }

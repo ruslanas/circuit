@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Box as DreiBox, Cylinder, Grid, Html, TransformControls, Edges, PerspectiveCamera, useGLTF } from '@react-three/drei';
+import { Geometry, Base, Addition, Subtraction, Intersection } from '@react-three/csg';
 import { getModel } from './db.js';
 import * as THREE from 'three';
 import { ChevronDown, ChevronRight } from 'lucide-react';
@@ -1129,6 +1130,105 @@ const Model3DNode = ({ node, config, isSelected, isEditMode, isVisible = true, o
   return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
 };
 
+const Solid3DNode = ({ node, config, nodes, nodeConfig, isSelected, isEditMode, isVisible = true, onSelect, onUpdateOffset, children }) => {
+  const groupRef = useRef(null);
+  const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
+  const { shape = 'box', operation = 'none', color = '#ffffff', wireframe = false, opacity = 1, sizeX = 1, sizeY = 1, sizeZ = 1 } = node.props || {};
+
+  const isCSGChild = operation !== 'none';
+  const geomArgs = shape === 'box' ? [sizeX, sizeY, sizeZ] : shape === 'sphere' ? [sizeX / 2, 32, 32] : [sizeX / 2, sizeX / 2, sizeY, 32];
+  
+  const getGeometry = () => {
+    if (shape === 'box') return <boxGeometry args={geomArgs} />;
+    if (shape === 'sphere') return <sphereGeometry args={geomArgs} />;
+    if (shape === 'cylinder') return <cylinderGeometry args={geomArgs} />;
+    return null;
+  };
+
+  const getCSGComponent = (op) => {
+    if (op === 'add') return Addition;
+    if (op === 'subtract') return Subtraction;
+    if (op === 'intersect') return Intersection;
+    return Base;
+  };
+
+  const csgChildren = nodes ? nodes.filter(n => n.type === 'SOLID_3D' && nodeConfig[n.id]?.parentId === node.id && n.props?.operation && n.props.operation !== 'none') : [];
+
+  const renderCSGTree = (csgNodes) => {
+    return csgNodes.map(n => {
+      const cfg = nodeConfig[n.id] || {};
+      const OpComp = getCSGComponent(n.props?.operation || 'add');
+      const nShape = n.props?.shape || 'box';
+      const nSizeX = n.props?.sizeX || 1;
+      const nSizeY = n.props?.sizeY || 1;
+      const nSizeZ = n.props?.sizeZ || 1;
+      const nArgs = nShape === 'box' ? [nSizeX, nSizeY, nSizeZ] : nShape === 'sphere' ? [nSizeX / 2, 32, 32] : [nSizeX / 2, nSizeX / 2, nSizeY, 32];
+      
+      const nOffset = [cfg.offsetX || 0, cfg.offsetY || 0, cfg.offsetZ || 0];
+      const nRot = [(cfg.pitch || 0) * (Math.PI / 180), (cfg.yaw || 0) * (Math.PI / 180), (cfg.roll || 0) * (Math.PI / 180)];
+      const nScale = [cfg.scaleX || 1, cfg.scaleY || 1, cfg.scaleZ || 1];
+
+      const nestedCSG = nodes.filter(child => child.type === 'SOLID_3D' && nodeConfig[child.id]?.parentId === n.id && child.props?.operation && child.props.operation !== 'none');
+
+      return (
+        <OpComp key={n.id} position={nOffset} rotation={nRot} scale={nScale}>
+          {nShape === 'box' && <boxGeometry args={nArgs} />}
+          {nShape === 'sphere' && <sphereGeometry args={nArgs} />}
+          {nShape === 'cylinder' && <cylinderGeometry args={nArgs} />}
+          {nestedCSG.length > 0 && renderCSGTree(nestedCSG)}
+        </OpComp>
+      );
+    });
+  };
+
+  const content = (
+    <>
+      <group visible={isVisible} position={[0, 0, 0]}
+        onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}
+        onPointerOver={(e) => { e.stopPropagation(); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={() => { document.body.style.cursor = 'auto'; }}
+      >
+        {isCSGChild ? (
+          <mesh>
+            {getGeometry()}
+            <meshStandardMaterial color={isSelected ? "#0088aa" : (operation === 'subtract' ? "#ff003c" : "#39ff14")} wireframe={true} transparent opacity={0.3} />
+          </mesh>
+        ) : (
+          <mesh>
+            {csgChildren.length > 0 ? (
+              <Geometry>
+                <Base>
+                  {getGeometry()}
+                </Base>
+                {renderCSGTree(csgChildren)}
+              </Geometry>
+            ) : (
+              getGeometry()
+            )}
+            <meshStandardMaterial 
+              color={isSelected ? "#0088aa" : color} 
+              wireframe={wireframe} 
+              transparent={opacity < 1} 
+              opacity={opacity} 
+            />
+          </mesh>
+        )}
+      </group>
+      {isSelected && isVisible && (
+        <Html position={[0, sizeY / 2 + 0.5, 0]} center>
+          <div className="bg-black/90 text-cyan-400 px-2 py-1 rounded border border-cyan-500 text-[10px] font-mono whitespace-nowrap pointer-events-none shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+            3D SOLID {operation !== 'none' ? `[${operation.toUpperCase()}]` : ''}
+          </div>
+        </Html>
+      )}
+      <group position={[0, 0, 0]}>{children}</group>
+    </>
+  );
+
+  if (isSelected && isEditMode) return <TransformControls mode="translate" size={0.6} onMouseUp={() => { if (groupRef.current) { const pos = groupRef.current.position; onUpdateOffset(node.id, parseFloat(pos.x.toFixed(2)), parseFloat(pos.y.toFixed(2)), parseFloat(pos.z.toFixed(2))); }}}><group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group></TransformControls>;
+  return <group ref={groupRef} position={offset} rotation={[(config?.pitch || 0) * (Math.PI / 180), (config?.yaw || 0) * (Math.PI / 180), (config?.roll || 0) * (Math.PI / 180)]}>{content}</group>;
+};
+
 const JoystickNode = ({ node, config, xPos = 50, yPos = 50, isSelected, isBurned, isEditMode, isVisible = true, onSelect, onUpdateOffset, onUpdateProp, children }) => {
   const groupRef = useRef(null);
   const offset = [config?.offsetX || 0, config?.offsetY || 0, config?.offsetZ || 0];
@@ -1519,6 +1619,7 @@ export default function Robot3DView({
         if (n.props?.modelUrl && !isMechanical) {
             content = <Model3DNode node={n} config={cfg} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Model3DNode>;
         }
+        else if (n.type === 'SOLID_3D') content = <Solid3DNode node={n} config={cfg} nodes={nodes} nodeConfig={nodeConfig} isSelected={isSelected} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</Solid3DNode>;
         else if (n.type === 'SERVO') content = <ServoNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</ServoNode>;
         else if (n.type === 'AERO_CONTROL_SURFACE') content = <AeroControlSurfaceNode node={n} config={cfg} angle={val} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets}>{buildTree(n.id)}</AeroControlSurfaceNode>;
         else if (n.type === 'JOYSTICK') content = <JoystickNode node={n} config={cfg} xPos={val?.xPos} yPos={val?.yPos} isSelected={isSelected} isBurned={burnedNodes[n.id]} isEditMode={isEditMode} isVisible={isVisible} onSelect={onSelectNode} onUpdateOffset={updateOffsets} onUpdateProp={onUpdateProp}>{buildTree(n.id)}</JoystickNode>;
